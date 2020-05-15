@@ -1,0 +1,68 @@
+= hr(1)
+:doctype:    manpage
+:man source: penlog
+
+== Name
+
+hr - Process the PENLog logging format
+
+== Synopsis
+
+----
+hr [ARGS] [FILE…]
+----
+
+== Description
+
+`hr(1)` is used to process data in the `penlog(7)` format.
+It converts data form the JSON format into the human readable format.
+Data is tried to be always aligned in order to make the logs as readable as possible.
+`hr(1)` provides filtering and archiving functionality.
+
+With no `FILE` from stdin is read.
+Multiple files are concatenated, similar to `cat(1)`.
+However, `-` as a `FILE` is not supported.
+If `FILE` has the file extension `.gz` (gzip) or `zst` (zstd) it is automatically decompressed.
+
+== Arguments
+
+`-c` int::
+`--complen` int::
+    The lenghth of the component field (default 8).
+
+`-f` string::
+`--filter` string::
+    A filter expression using one of the following syntaxes:
+    `file`, `type,…:file`, `component,…:type,…:file`.
+    For `file` the same compression algorithms as for reading are supported.
+    The first one saves the JSON data into `file`.
+    The second one only writes messages of `type` into `file`.
+    The third one only writes messages from `comonent` and `type` into `file`.
+    Filters to stdout can be applied using the filename `-`.
+
+`-l` string::
+`--logformat` string::
+    Formatstring for one logline, default: `"%s {%s} [%s]: %s"`
+    The arguments are: `timestamp`, `component`, `type`, and `message`.
+
+`-t` int::
+`--typelen` int::
+    The lenghth of the type field (default 7).
+
+`-s` string::
+`--timespec` string::
+    The golang timspec for the timestamp, default: `"Jan _2 15:04:05.000"`.
+
+== Examples
+
+Read from stdin and only display debug messages:
+
+    $ fancy-command | hr -f debug:-
+
+Read from compressed file:
+
+    $ hr log.json.zst
+
+Archive testrun into multiple files; only show info on stdout:
+
+    $ fancy-command | hr -f info:- -f error:errors.json.zst -f all.json.zst
