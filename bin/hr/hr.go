@@ -42,7 +42,7 @@ type converter struct {
 	workers     int
 	broadcastCh chan []byte
 	writers     []chan []byte
-	mutex       sync.RWMutex
+	mutex       sync.Mutex
 	pool        sync.Pool
 	wg          sync.WaitGroup
 }
@@ -179,14 +179,14 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 			if c.workers > 0 {
 				buf := helpers.GetSlice(&c.pool, len(jsonLine))
 				n := copy(buf, jsonLine)
-				c.mutex.RLock()
+				c.mutex.Lock()
 				// Avoid sends on closed channel by signal handler.
 				if c.cleanedUp {
-					c.mutex.RUnlock()
+					c.mutex.Unlock()
 					break
 				}
-				c.mutex.RUnlock()
 				c.broadcastCh <- buf[:n]
+				c.mutex.Unlock()
 			}
 
 			if hrLine, err := c.transformLine(jsonLine); err == nil {
