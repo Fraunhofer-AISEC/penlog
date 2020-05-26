@@ -1,4 +1,4 @@
-module git-int.aisec.fraunhofer.de/tatschne/penlog
+module github.com/Fraunhofer-AISEC/penlog
 
 go 1.14
 
