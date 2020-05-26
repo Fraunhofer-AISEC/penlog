@@ -1,5 +1,8 @@
 # PENLog
 
+[![AUR package](https://img.shields.io/aur/version/penlog)](https://aur.archlinux.org/packages/penlog/)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/Fraunhofer-AISEC/penlog)
+
 PENLog provides a specification, library, and tooling for simple machine readable logging.
 
 ## How does it work?
