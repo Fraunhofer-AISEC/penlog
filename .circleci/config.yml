@@ -5,7 +5,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: archlinux/base
+      - image: circleci/golang:1.9
 
     steps:
       - checkout
