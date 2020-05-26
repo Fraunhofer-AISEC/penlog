@@ -1,0 +1,15 @@
+image: archlinux
+packages:
+  - go
+  - bash-bats
+  - asciidoctor
+
+tasks:
+  - build: |
+      cd penlog
+      make hr man
+
+  - clitest: |
+      cd penlog
+      export PATH=$PATH:$PWD
+      make clitest
