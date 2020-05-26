@@ -66,3 +66,18 @@ Read from compressed file:
 Archive testrun into multiple files; only show info on stdout:
 
     $ fancy-command | hr -f info:- -f error:errors.json.zst -f all.json.zst
+
+== Authors
+
+Current maintainers are:
+
+* Stefan Tatschner <stefan@rumpelsepp.org>
+* Tobias Specht
+
+== Bugs
+
+This project is maintained on Github: https://github.com/Fraunhofer-AISEC/penlog.
+
+== See Also
+
+penlog(7)

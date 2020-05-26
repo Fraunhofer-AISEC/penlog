@@ -115,3 +115,18 @@ If a JSON line cannot be decoded it MUST be prefixed with `error:␣` (␣ is a 
 == License
 
 This document is published under the Apache-2.0 license.
+
+== Authors
+
+Current maintainers are:
+
+* Stefan Tatschner <stefan@rumpelsepp.org>
+* Tobias Specht
+
+== Bugs
+
+This project is maintained on Github: https://github.com/Fraunhofer-AISEC/penlog.
+
+== See Also
+
+hr(1)
