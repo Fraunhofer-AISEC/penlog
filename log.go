@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -20,6 +21,7 @@ type Logger struct {
 	writer    io.Writer
 	buf       bytes.Buffer
 	mu        sync.Mutex
+	lines     int
 }
 
 const (
@@ -60,6 +62,14 @@ func (l *Logger) output(msg map[string]interface{}) error {
 	msg["timestamp"] = time.Now().Format(l.timespec)
 	msg["component"] = l.component
 	msg["host"] = l.host
+	if l.lines > 0 {
+		_, file, line, ok := runtime.Caller(l.lines)
+		if !ok {
+			file = "???"
+			line = 0
+		}
+		msg["line"] = fmt.Sprintf("%s:%d", file, line)
+	}
 
 	b, err := json.Marshal(msg)
 	if err != nil {
@@ -71,6 +81,12 @@ func (l *Logger) output(msg map[string]interface{}) error {
 	l.buf.WriteTo(l.writer)
 
 	return nil
+}
+
+func (l *Logger) EnableLines(calldepth int) {
+	l.mu.Lock()
+	l.lines = calldepth
+	l.mu.Unlock()
 }
 
 func (l *Logger) Log(msg map[string]interface{}) {
