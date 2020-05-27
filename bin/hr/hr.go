@@ -144,7 +144,7 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	}
 
 	if line, ok := data["line"]; ok {
-		payload = fmt.Sprintf("%s: %s", line, payload)
+		payload = fmt.Sprintf("%s (%s)", payload, line)
 	}
 
 	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)

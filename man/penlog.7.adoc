@@ -79,10 +79,9 @@ If encoding of a log message fails, the component MUST be set to `JSON`, the typ
 The syntax of the human readable format looks like the following.
 Curly braces indicate a field from the JSON format.
 If a field is empty it expands to an zero length string.
-The fragment `:+` means: if the field is non empty, append the string after the plus `+`.
 A verbatim curly brace brace is expressed with two ones: `{{` means `{`.
 
-    {timestamp} {{{component}}} [{type}]: {line:+: }{data}
+    {timestamp} {{{component}}} [{type}]: {data} ({line})
 
 `timestamp`::
     The RECOMMENDED timestamp format is Go's `StampMilli` format as defined to `Jan _2 15:04:05.000`.
