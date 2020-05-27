@@ -143,6 +143,10 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("unsupported data: %v", v)
 	}
 
+	if line, ok := data["line"]; ok {
+		payload = fmt.Sprintf("%s: %s", line, payload)
+	}
+
 	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)
 	if err != nil {
 		return "", err
