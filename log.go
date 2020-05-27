@@ -36,12 +36,12 @@ const (
 )
 
 func NewLogger(component string, w io.Writer) *Logger {
+	lines := 0
 	hostname, err := os.Hostname()
 	// This should not happen!
 	if err != nil {
 		panic(err)
 	}
-
 	if component == "" {
 		if val, ok := os.LookupEnv("PENLOG_COMPONENT"); ok {
 			component = val
@@ -49,11 +49,15 @@ func NewLogger(component string, w io.Writer) *Logger {
 			component = "root"
 		}
 	}
+	if _, ok := os.LookupEnv("PENLOG_LINES"); ok {
+		lines = 2
+	}
 
 	return &Logger{
 		host:      hostname,
 		component: component,
 		timespec:  "2006-01-02T15:04:05.000000",
+		lines:     lines,
 		writer:    w,
 	}
 }
