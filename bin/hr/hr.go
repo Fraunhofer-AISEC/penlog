@@ -476,6 +476,10 @@ func main() {
 		os.Exit(1)
 	}()
 
+	if !isatty(uintptr(syscall.Stdout)) {
+		conv.color = false
+	}
+
 	if isatty(uintptr(syscall.Stdin)) {
 		for _, file := range pflag.Args() {
 			reader = getReader(file)
