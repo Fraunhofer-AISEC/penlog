@@ -27,7 +27,7 @@ type Logger struct {
 const (
 	msgTypeRead     = "read"
 	msgTypeWrite    = "write"
-	msgTypeMessage  = "msg"
+	msgTypeMessage  = "message"
 	msgTypePreamble = "preamble"
 )
 
@@ -114,7 +114,7 @@ func (l *Logger) LogPreamble(v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprint(v...),
 		"type":     msgTypePreamble,
-		"priority": PrioInfo,
+		"priority": PrioNotice,
 	}
 
 	l.Log(msg)
@@ -124,7 +124,7 @@ func (l *Logger) LogPreamblef(format string, v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprintf(format, v...),
 		"type":     msgTypePreamble,
-		"priority": PrioInfo,
+		"priority": PrioNotice,
 	}
 
 	l.Log(msg)
