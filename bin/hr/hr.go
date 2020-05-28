@@ -25,6 +25,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const (
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorBlue   = "\033[34m"
+	colorPurple = "\033[35m"
+	colorCyan   = "\033[36m"
+	colorWhite  = "\033[37m"
+	colorGray   = "\033[0;38;5;245m"
+)
+
 var (
 	errIsFiltered  = errors.New("Line is filtered")
 	errInvalidData = errors.New("Invalid data")
@@ -37,6 +49,7 @@ type converter struct {
 	compLen     int
 	typeLen     int
 	logFmt      string
+	color       bool
 
 	cleanedUp   bool
 	workers     int
@@ -144,7 +157,12 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	}
 
 	if line, ok := data["line"]; ok {
-		payload = fmt.Sprintf("%s (%s)", payload, line)
+		if c.color {
+			fmtStr := "%s " + string(colorGray) + "(%s)" + string(colorReset)
+			payload = fmt.Sprintf(fmtStr, payload, line)
+		} else {
+			payload = fmt.Sprintf("%s (%s)", payload, line)
+		}
 	}
 
 	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)
@@ -387,6 +405,7 @@ func main() {
 		}
 	)
 
+	pflag.BoolVar(&conv.color, "color", true, "timespec in output")
 	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
 	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.typeLen, "typelen", "t", 7, "len of type field")
