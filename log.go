@@ -50,7 +50,7 @@ func NewLogger(component string, w io.Writer) *Logger {
 		}
 	}
 	if _, ok := os.LookupEnv("PENLOG_LINES"); ok {
-		lines = 2
+		lines = 3
 	}
 
 	return &Logger{
