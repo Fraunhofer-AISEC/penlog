@@ -52,6 +52,7 @@ type converter struct {
 	typeLen     int
 	logFmt      string
 	color       bool
+	showLines   bool
 
 	cleanedUp   bool
 	workers     int
@@ -176,15 +177,16 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 			}
 		}
 	}
-	if line, ok := data["line"]; ok {
-		if c.color {
-			fmtStr += " " + string(colorBlue) + "(%s)" + string(colorReset)
-		} else {
-			fmtStr += " " + "(%s)"
+	payload = fmt.Sprintf(fmtStr, payload)
+	if c.showLines {
+		if line, ok := data["line"]; ok {
+			if c.color {
+				fmtStr += " " + string(colorBlue) + "(%s)" + string(colorReset)
+			} else {
+				fmtStr += " " + "(%s)"
+			}
+			payload = fmt.Sprintf(fmtStr, payload, line)
 		}
-		payload = fmt.Sprintf(fmtStr, payload, line)
-	} else {
-		payload = fmt.Sprintf(fmtStr, payload)
 	}
 
 	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)
@@ -440,6 +442,7 @@ func main() {
 	)
 
 	pflag.BoolVar(&conv.color, "color", true, "timespec in output")
+	pflag.BoolVar(&conv.showLines, "lines", true, "show line numbers if available")
 	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
 	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.typeLen, "typelen", "t", 8, "len of type field")
