@@ -240,16 +240,28 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 					continue
 				}
 				if errors.Is(err, errInvalidData) {
-					fmt.Fprintf(os.Stderr, "error: %s\n", err)
+					if c.color {
+						fmt.Fprintf(os.Stderr, string(colorBold)+string(colorRed)+"error: %s\n"+string(colorReset), err)
+					} else {
+						fmt.Fprintf(os.Stderr, "error: %s\n", err)
+					}
 					continue
 				}
 
-				fmt.Fprintf(os.Stderr, "error: %s\n", scanner.Text())
+				if c.color {
+					fmt.Fprintf(os.Stderr, string(colorBold)+string(colorRed)+"error: %s\n"+string(colorReset), scanner.Text())
+				} else {
+					fmt.Fprintf(os.Stderr, "error: %s\n", scanner.Text())
+				}
 			}
 		}
 	}
 	if scanner.Err() != nil {
-		fmt.Printf("error: read: %s\n", scanner.Err())
+		if c.color {
+			fmt.Fprintf(os.Stderr, string(colorBold)+string(colorRed)+"error: read: %s\n"+string(colorReset), scanner.Err())
+		} else {
+			fmt.Fprintf(os.Stderr, "error: read: %s\n", scanner.Err())
+		}
 	}
 }
 
