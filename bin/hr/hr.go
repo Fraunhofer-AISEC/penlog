@@ -178,7 +178,7 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	}
 	if line, ok := data["line"]; ok {
 		if c.color {
-			fmtStr += " " + string(colorGray) + "(%s)" + string(colorReset)
+			fmtStr += " " + string(colorBlue) + "(%s)" + string(colorReset)
 		} else {
 			fmtStr += " " + "(%s)"
 		}
@@ -442,7 +442,7 @@ func main() {
 	pflag.BoolVar(&conv.color, "color", true, "timespec in output")
 	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
 	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
-	pflag.IntVarP(&conv.typeLen, "typelen", "t", 7, "len of type field")
+	pflag.IntVarP(&conv.typeLen, "typelen", "t", 8, "len of type field")
 	pflag.StringVarP(&conv.logFmt, "logformat", "l", "%s {%s} [%s]: %s", "formatstring for a logline")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file, you can add filters: COMPONENT1:FILTER1:FILENAME")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
