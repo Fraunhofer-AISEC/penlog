@@ -25,14 +25,22 @@ type Logger struct {
 }
 
 const (
-	msgTypeError    = "error"
-	msgTypeWarning  = "warning"
-	msgTypeInfo     = "info"
-	msgTypeDebug    = "debug"
 	msgTypeRead     = "read"
 	msgTypeWrite    = "write"
 	msgTypeMessage  = "msg"
 	msgTypePreamble = "preamble"
+)
+
+// RFC5424 Section 6.2.1
+const (
+	PrioEmergency = iota
+	PrioAlert
+	PrioCritical
+	PrioError
+	PrioWarning
+	PrioNotice
+	PrioInfo
+	PrioDebug
 )
 
 func NewLogger(component string, w io.Writer) *Logger {
@@ -104,8 +112,9 @@ func (l *Logger) Log(msg map[string]interface{}) {
 
 func (l *Logger) LogPreamble(v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data": fmt.Sprint(v...),
-		"type": msgTypePreamble,
+		"data":     fmt.Sprint(v...),
+		"type":     msgTypePreamble,
+		"priority": PrioInfo,
 	}
 
 	l.Log(msg)
@@ -113,8 +122,9 @@ func (l *Logger) LogPreamble(v ...interface{}) {
 
 func (l *Logger) LogPreamblef(format string, v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data": fmt.Sprintf(format, v...),
-		"type": msgTypePreamble,
+		"data":     fmt.Sprintf(format, v...),
+		"type":     msgTypePreamble,
+		"priority": PrioInfo,
 	}
 
 	l.Log(msg)
@@ -122,9 +132,10 @@ func (l *Logger) LogPreamblef(format string, v ...interface{}) {
 
 func (l *Logger) LogRead(handle string, v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data":   fmt.Sprint(v...),
-		"type":   msgTypeRead,
-		"handle": handle,
+		"data":     fmt.Sprint(v...),
+		"type":     msgTypeRead,
+		"priority": PrioDebug,
+		"handle":   handle,
 	}
 
 	l.Log(msg)
@@ -132,9 +143,10 @@ func (l *Logger) LogRead(handle string, v ...interface{}) {
 
 func (l *Logger) LogReadf(handle, format string, v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data":   fmt.Sprintf(format, v...),
-		"type":   msgTypeRead,
-		"handle": handle,
+		"data":     fmt.Sprintf(format, v...),
+		"type":     msgTypeRead,
+		"priority": PrioDebug,
+		"handle":   handle,
 	}
 
 	l.Log(msg)
@@ -142,9 +154,10 @@ func (l *Logger) LogReadf(handle, format string, v ...interface{}) {
 
 func (l *Logger) LogWrite(handle string, v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data":   fmt.Sprint(v...),
-		"type":   msgTypeWarning,
-		"handle": handle,
+		"data":     fmt.Sprint(v...),
+		"type":     msgTypeWrite,
+		"priority": PrioDebug,
+		"handle":   handle,
 	}
 
 	l.Log(msg)
@@ -152,9 +165,10 @@ func (l *Logger) LogWrite(handle string, v ...interface{}) {
 
 func (l *Logger) LogWritef(handle, format string, v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data":   fmt.Sprintf(format, v...),
-		"type":   msgTypeWrite,
-		"handle": handle,
+		"data":     fmt.Sprintf(format, v...),
+		"type":     msgTypeWrite,
+		"priority": PrioDebug,
+		"handle":   handle,
 	}
 
 	l.Log(msg)
@@ -162,8 +176,9 @@ func (l *Logger) LogWritef(handle, format string, v ...interface{}) {
 
 func (l *Logger) LogMessage(v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data": fmt.Sprint(v...),
-		"type": msgTypeMessage,
+		"data":     fmt.Sprint(v...),
+		"type":     msgTypeMessage,
+		"priority": PrioInfo,
 	}
 
 	l.Log(msg)
@@ -171,8 +186,69 @@ func (l *Logger) LogMessage(v ...interface{}) {
 
 func (l *Logger) LogMessagef(format string, v ...interface{}) {
 	var msg = map[string]interface{}{
-		"data": fmt.Sprintf(format, v...),
-		"type": msgTypeMessage,
+		"data":     fmt.Sprintf(format, v...),
+		"type":     msgTypeMessage,
+		"priority": PrioInfo,
+	}
+
+	l.Log(msg)
+}
+
+func (l *Logger) LogError(v ...interface{}) {
+	var msg = map[string]interface{}{
+		"data":     fmt.Sprint(v...),
+		"type":     msgTypeMessage,
+		"priority": PrioError,
+	}
+
+	l.Log(msg)
+}
+
+func (l *Logger) LogErrorf(format string, v ...interface{}) {
+	var msg = map[string]interface{}{
+		"data":     fmt.Sprintf(format, v...),
+		"type":     msgTypeMessage,
+		"priority": PrioError,
+	}
+
+	l.Log(msg)
+}
+
+func (l *Logger) LogWarning(v ...interface{}) {
+	var msg = map[string]interface{}{
+		"data":     fmt.Sprint(v...),
+		"type":     msgTypeMessage,
+		"priority": PrioError,
+	}
+
+	l.Log(msg)
+}
+
+func (l *Logger) LogWarningf(format string, v ...interface{}) {
+	var msg = map[string]interface{}{
+		"data":     fmt.Sprintf(format, v...),
+		"type":     msgTypeMessage,
+		"priority": PrioWarning,
+	}
+
+	l.Log(msg)
+}
+
+func (l *Logger) LogDebug(v ...interface{}) {
+	var msg = map[string]interface{}{
+		"data":     fmt.Sprint(v...),
+		"type":     msgTypeMessage,
+		"priority": PrioDebug,
+	}
+
+	l.Log(msg)
+}
+
+func (l *Logger) LogDebugf(format string, v ...interface{}) {
+	var msg = map[string]interface{}{
+		"data":     fmt.Sprintf(format, v...),
+		"type":     msgTypeMessage,
+		"priority": PrioDebug,
 	}
 
 	l.Log(msg)

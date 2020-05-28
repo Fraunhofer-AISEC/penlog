@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"git.sr.ht/~rumpelsepp/helpers"
+	"github.com/Fraunhofer-AISEC/penlog"
 	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/pflag"
 	"golang.org/x/sys/unix"
@@ -27,6 +28,7 @@ import (
 
 const (
 	colorReset  = "\033[0m"
+	colorBold   = "\033[1m"
 	colorRed    = "\033[31m"
 	colorGreen  = "\033[32m"
 	colorYellow = "\033[33m"
@@ -156,13 +158,33 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("unsupported data: %v", v)
 	}
 
+	fmtStr := "%s"
+	if c.color {
+		if prio, ok := data["priority"]; ok {
+			if p, ok := prio.(float64); ok {
+				switch p {
+				case penlog.PrioEmergency, penlog.PrioAlert, penlog.PrioCritical, penlog.PrioError:
+					fmtStr = string(colorBold) + string(colorRed) + "%s" + string(colorReset)
+				case penlog.PrioWarning:
+					fmtStr = string(colorBold) + string(colorYellow) + "%s" + string(colorReset)
+				case penlog.PrioNotice:
+					fmtStr = string(colorBold) + "%s" + string(colorReset)
+				case penlog.PrioInfo:
+				case penlog.PrioDebug:
+					fmtStr = string(colorGray) + "%s" + string(colorReset)
+				}
+			}
+		}
+	}
 	if line, ok := data["line"]; ok {
 		if c.color {
-			fmtStr := "%s " + string(colorGray) + "(%s)" + string(colorReset)
-			payload = fmt.Sprintf(fmtStr, payload, line)
+			fmtStr += " " + string(colorGray) + "(%s)" + string(colorReset)
 		} else {
-			payload = fmt.Sprintf("%s (%s)", payload, line)
+			fmtStr += " " + "(%s)"
 		}
+		payload = fmt.Sprintf(fmtStr, payload, line)
+	} else {
+		payload = fmt.Sprintf(fmtStr, payload)
 	}
 
 	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)
