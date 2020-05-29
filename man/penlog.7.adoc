@@ -116,6 +116,14 @@ If a JSON line cannot be decoded it MUST be prefixed with `error:␣` (␣ is a 
     error:   File "<string>", line 1, in <module>
     error: ModuleNotFoundError: No module named 'foo'
 
+== Environment Variables
+
+`PENLOG_COMPONENT`::
+    If no component is set, the `component` field MAY be set via the `PENLOG_COMPONENT` variable at the scope of an operating system process.
+
+`PENLOG_LINES`::
+    If this environment variable is set, implementations SHOULD emit filenames with line numbers via the `line` field.
+
 == License
 
 This document is published under the Apache-2.0 license.
