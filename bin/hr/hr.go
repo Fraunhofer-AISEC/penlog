@@ -44,6 +44,10 @@ var (
 	errInvalidData = errors.New("Invalid data")
 )
 
+func colorize(color, s string) string {
+	return color + s + colorReset
+}
+
 type converter struct {
 	timespec    string
 	typeFilters []string
@@ -164,15 +168,18 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 		if prio, ok := data["priority"]; ok {
 			if p, ok := prio.(float64); ok {
 				switch p {
-				case penlog.PrioEmergency, penlog.PrioAlert, penlog.PrioCritical, penlog.PrioError:
-					fmtStr = string(colorBold) + string(colorRed) + "%s" + string(colorReset)
+				case penlog.PrioEmergency,
+					penlog.PrioAlert,
+					penlog.PrioCritical,
+					penlog.PrioError:
+					fmtStr = colorize(colorBold, colorize(colorRed, "%s"))
 				case penlog.PrioWarning:
-					fmtStr = string(colorBold) + string(colorYellow) + "%s" + string(colorReset)
+					fmtStr = colorize(colorBold, colorize(colorYellow, "%s"))
 				case penlog.PrioNotice:
-					fmtStr = string(colorBold) + "%s" + string(colorReset)
+					fmtStr = colorize(colorBold, "%s")
 				case penlog.PrioInfo:
 				case penlog.PrioDebug:
-					fmtStr = string(colorGray) + "%s" + string(colorReset)
+					fmtStr = colorize(colorGray, "%s")
 				}
 			}
 		}
@@ -181,7 +188,7 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	if c.showLines {
 		if line, ok := data["line"]; ok {
 			if c.color {
-				fmtStr += " " + string(colorBlue) + "(%s)" + string(colorReset)
+				fmtStr += " " + colorize(colorBlue, "(%s)")
 			} else {
 				fmtStr += " " + "(%s)"
 			}
@@ -243,7 +250,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 				}
 				if errors.Is(err, errInvalidData) {
 					if c.color {
-						fmt.Fprintf(os.Stderr, string(colorBold)+string(colorRed)+"error: %s\n"+string(colorReset), err)
+						fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), err)
 					} else {
 						fmt.Fprintf(os.Stderr, "error: %s\n", err)
 					}
@@ -251,7 +258,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 				}
 
 				if c.color {
-					fmt.Fprintf(os.Stderr, string(colorBold)+string(colorRed)+"error: %s\n"+string(colorReset), scanner.Text())
+					fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), scanner.Text())
 				} else {
 					fmt.Fprintf(os.Stderr, "error: %s\n", scanner.Text())
 				}
@@ -260,7 +267,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 	}
 	if scanner.Err() != nil {
 		if c.color {
-			fmt.Fprintf(os.Stderr, string(colorBold)+string(colorRed)+"error: read: %s\n"+string(colorReset), scanner.Err())
+			fmt.Fprintf(os.Stderr, colorize(colorRed, "error: read: %s\n"), scanner.Err())
 		} else {
 			fmt.Fprintf(os.Stderr, "error: read: %s\n", scanner.Err())
 		}
