@@ -1,22 +1,37 @@
 # SPDX-License-Identifier: Apache-2.0
 
+import inspect
 import json
+import os
 import socket
 import sys
 from datetime import datetime
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Dict, TextIO
 
 
+# TODO: minimize! This is not intended like this.
 class MessageType(str, Enum):
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"
     DEBUG = "debug"
-    SUMMARY = "summary"
     READ = "read"
     WRITE = "write"
     PREAMBLE = "preamble"
+    MESSAGE = "message"
+    SUMMARY = "summary"
+
+
+class MessagePrio(IntEnum):
+    EMERGENCY = 0
+    ALERT = 1
+    CRITICAL = 2
+    ERROR = 3
+    WARNING = 4
+    NOTICE = 5
+    INFO = 6
+    DEBUG = 7
 
 
 class Logger:
@@ -31,6 +46,10 @@ class Logger:
         msg["component"] = self.component
         msg["host"] = self.host
         msg["timestamp"] = datetime.now().isoformat()
+        if os.environ.get("PENLOG_LINES"):
+            stack = inspect.stack()
+            frame = stack[3]
+            msg["line"] = f'{frame.filename}:{frame.lineno}'
         print(json.dumps(msg), file=self.file, flush=self.flush)
 
     def log_preamble(self, data: str) -> None:
@@ -38,6 +57,7 @@ class Logger:
             'host': self.host,
             'type': MessageType.PREAMBLE,
             'data': data,
+            'priority': MessagePrio.NOTICE,
         }
         self._log(msg)
 
@@ -46,6 +66,7 @@ class Logger:
             'type': MessageType.READ,
             'handle': handle,
             'data': data,
+            'priority': MessagePrio.DEBUG,
         }
         self._log(msg)
 
@@ -54,30 +75,33 @@ class Logger:
             'type': MessageType.WRITE,
             'handle': handle,
             'data': data,
+            'priority': MessagePrio.DEBUG,
         }
         self._log(msg)
 
-    def log_msg(self, data: str, type_: MessageType = MessageType.INFO) -> None:
+    def log_msg(self, data: str, type_: MessageType = MessageType.MESSAGE,
+                prio: MessagePrio = MessagePrio.INFO) -> None:
         msg = {
             'type': type_,
+            'priority': prio,
             'data': data,
         }
         self._log(msg)
 
     def log_debug(self, data: str) -> None:
-        self.log_msg(data, MessageType.DEBUG)
+        self.log_msg(data, MessageType.MESSAGE, MessagePrio.DEBUG)
 
     def log_info(self, data: str) -> None:
-        self.log_msg(data, MessageType.INFO)
+        self.log_msg(data, MessageType.MESSAGE, MessagePrio.INFO)
 
     def log_warning(self, data: str) -> None:
-        self.log_msg(data, MessageType.WARNING)
+        self.log_msg(data, MessageType.MESSAGE, MessagePrio.WARNING)
 
     def log_error(self, data: str) -> None:
-        self.log_msg(data, MessageType.ERROR)
+        self.log_msg(data, MessageType.MESSAGE, MessagePrio.ERROR)
 
     def log_summary(self, data: str) -> None:
-        self.log_msg(data, MessageType.SUMMARY)
+        self.log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE)
 
 
 # This is the module level default logger.
