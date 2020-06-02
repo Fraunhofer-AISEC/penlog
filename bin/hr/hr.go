@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime/pprof"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -59,7 +60,7 @@ type converter struct {
 	compLen     int
 	typeLen     int
 	logFmt      string
-	color       bool
+	colors      bool
 	showLines   bool
 
 	cleanedUp   bool
@@ -168,7 +169,7 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	}
 
 	fmtStr := "%s"
-	if c.color {
+	if c.colors {
 		if prio, ok := data["priority"]; ok {
 			if p, ok := prio.(float64); ok {
 				switch p {
@@ -191,7 +192,7 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	payload = fmt.Sprintf(fmtStr, payload)
 	if c.showLines {
 		if line, ok := data["line"]; ok {
-			if c.color {
+			if c.colors {
 				fmtStr += " " + colorize(colorBlue, "(%s)")
 			} else {
 				fmtStr += " " + "(%s)"
@@ -253,7 +254,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 					continue
 				}
 				if errors.Is(err, errInvalidData) {
-					if c.color {
+					if c.colors {
 						fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), err)
 					} else {
 						fmt.Fprintf(os.Stderr, "error: %s\n", err)
@@ -261,7 +262,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 					continue
 				}
 
-				if c.color {
+				if c.colors {
 					fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), scanner.Text())
 				} else {
 					fmt.Fprintf(os.Stderr, "error: %s\n", scanner.Text())
@@ -270,7 +271,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 		}
 	}
 	if scanner.Err() != nil {
-		if c.color {
+		if c.colors {
 			fmt.Fprintf(os.Stderr, colorize(colorRed, "error: read: %s\n"), scanner.Err())
 		} else {
 			fmt.Fprintf(os.Stderr, "error: read: %s\n", scanner.Err())
@@ -444,6 +445,7 @@ func getReader(filename string) io.Reader {
 func main() {
 	var (
 		filterSpecs []string
+		colorsCli   bool
 		conv        = converter{
 			pool:        helpers.CreateMemPool(),
 			workers:     0,
@@ -452,7 +454,7 @@ func main() {
 		}
 	)
 
-	pflag.BoolVar(&conv.color, "color", true, "timespec in output")
+	pflag.BoolVar(&colorsCli, "colors", true, "enable colorized output based on priorities")
 	pflag.BoolVar(&conv.showLines, "lines", true, "show line numbers if available")
 	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
 	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
@@ -490,8 +492,16 @@ func main() {
 		os.Exit(1)
 	}()
 
-	if !isatty(uintptr(syscall.Stdout)) {
-		conv.color = false
+	conv.colors = colorsCli
+	if colorsCli {
+		if !isatty(uintptr(syscall.Stdout)) {
+			conv.colors = false
+		}
+		if valRaw, ok := os.LookupEnv("PENLOG_FORCE_COLORS"); ok {
+			if val, err := strconv.ParseBool(valRaw); val && err == nil {
+				conv.colors = colorsCli
+			}
+		}
 	}
 
 	if isatty(uintptr(syscall.Stdin)) {
