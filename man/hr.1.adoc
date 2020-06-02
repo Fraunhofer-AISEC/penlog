@@ -26,7 +26,7 @@ If `FILE` has the file extension `.gz` (gzip) or `zst` (zstd) it is automaticall
 
 == Arguments
 
-`--color`::
+`--colors`::
     Enable or disable the colorization of output.
 
 `-c` int::
@@ -73,17 +73,8 @@ Archive testrun into multiple files; only show info on stdout:
 
     $ fancy-command | hr -f info:- -f error:errors.json.zst -f all.json.zst
 
-== Authors
-
-Current maintainers are:
-
-* Stefan Tatschner <stefan@rumpelsepp.org>
-* Tobias Specht
-
-== Bugs
-
-This project is maintained on Github: https://github.com/Fraunhofer-AISEC/penlog.
-
 == See Also
 
-penlog(7)
+penlog(7), penlog-pest-practice(7)
+
+include::footer.adoc[]

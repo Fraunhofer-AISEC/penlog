@@ -4,7 +4,7 @@
 
 == Name
 
-penlog - A generic logging format v1
+penlog - A generic and machine readable logging format
 
 == Specification
 
@@ -96,15 +96,15 @@ A verbatim curly brace brace is expressed with two ones: `{{` means `{`.
     The `component` and `type` fields MUST be padded or truncated that the colons, `:`, in every single line are perfectly aligned.
     For small projects only consisting of a single component, the `component` field MAY be omitted.
 
-`line`::
-    The optional filename and line number where this log entry origins from.
-
 `data`::
     The actual log message.
     It MAY be truncated to fit in the current terminal size.
     When it is truncated an ellipsis character (`…`) MUST be appended to indicate the truncation for the user,
 
-Example:
+`line`::
+    The optional filename and line number where this log entry origins from.
+
+=== Example
 
     Apr  2 12:48:08.906 {scanner } [msg   ]: Starting tshark with
     Apr  2 12:48:09.583 {moncay  } [msg   ]: Doing stuff
@@ -118,27 +118,22 @@ If a JSON line cannot be decoded it MUST be prefixed with `error:␣` (␣ is a 
 
 == Environment Variables
 
-`PENLOG_COMPONENT`::
+The following environment variables MAY be understood by penlog implementations.
+The supported datatypes are `string` and `bool`.
+A `bool` is a special string consisting of either `t, T, true, TRUE, 1` or `f, F, false, FALSE, 0`.
+
+`PENLOG_COMPONENT` (string)::
     If no component is set, the `component` field MAY be set via the `PENLOG_COMPONENT` variable at the scope of an operating system process.
 
-`PENLOG_LINES`::
+`PENLOG_FORCE_COLORS` (bool)::
+    It is best practice to disable color escape codes when the relevant output streams are redirected to a file or a pipe.
+    Setting thes evironmental variable enforces color escape codes.
+
+`PENLOG_LINES` (bool)::
     If this environment variable is set, implementations SHOULD emit filenames with line numbers via the `line` field.
-
-== License
-
-This document is published under the Apache-2.0 license.
-
-== Authors
-
-Current maintainers are:
-
-* Stefan Tatschner <stefan@rumpelsepp.org>
-* Tobias Specht
-
-== Bugs
-
-This project is maintained on Github: https://github.com/Fraunhofer-AISEC/penlog.
 
 == See Also
 
-hr(1)
+hr(1), penlog-best-practice(7)
+
+include::footer.adoc[]

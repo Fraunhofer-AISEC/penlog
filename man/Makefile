@@ -23,10 +23,10 @@ ASCIIDOC_MAN        = asciidoctor
 ASCIIDOC_MAN_FLAGS  = -d manpage -b manpage
 ASCIIDOC_HTML_FLAGS =
 
-MAN_ADOCS = $(wildcard *.adoc)
+MAN_ADOCS = $(wildcard *.1.adoc) $(wildcard *.7.adoc)
 DOC_MAN   = $(patsubst %.adoc,%,$(MAN_ADOCS))
 DOC_HTML   = $(patsubst %.adoc,%.html,$(MAN1_ADOCS))
-INCLUDES   =
+INCLUDES   = footer.adoc
 CSS        =
 
 all: html man
