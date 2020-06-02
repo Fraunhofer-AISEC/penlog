@@ -12,4 +12,5 @@ tasks:
   - clitest: |
       cd penlog
       export PATH=$PATH:$PWD
+      export GOFLAGS="-race"
       make clitest
