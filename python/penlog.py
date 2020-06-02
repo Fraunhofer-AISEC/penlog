@@ -7,7 +7,7 @@ import socket
 import sys
 from datetime import datetime
 from enum import Enum, IntEnum
-from typing import Dict, TextIO
+from typing import Dict, List, TextIO, Optional
 
 
 # TODO: minimize! This is not intended like this.
@@ -34,6 +34,12 @@ class MessagePrio(IntEnum):
     DEBUG = 7
 
 
+def _get_line_number(depth: int) -> str:
+    stack = inspect.stack()
+    frame = stack[depth]
+    return f'{frame.filename}:{frame.lineno}'
+
+
 class Logger:
     def __init__(self, component: str = "root", timefmt: str = '%c',
                  flush: bool = False, file_: TextIO = sys.stderr):
@@ -42,108 +48,58 @@ class Logger:
         self.flush = flush
         self.file = file_
 
-    def _log(self, msg: Dict) -> None:
+    def _log(self, msg: Dict, depth: int) -> None:
         msg["component"] = self.component
         msg["host"] = self.host
         msg["timestamp"] = datetime.now().isoformat()
         if os.environ.get("PENLOG_LINES"):
-            stack = inspect.stack()
-            frame = stack[3]
-            msg["line"] = f'{frame.filename}:{frame.lineno}'
+            msg["line"] = _get_line_number(depth)
         print(json.dumps(msg), file=self.file, flush=self.flush)
 
-    def log_preamble(self, data: str) -> None:
-        msg = {
-            'host': self.host,
-            'type': MessageType.PREAMBLE,
-            'data': data,
-            'priority': MessagePrio.NOTICE,
-        }
-        self._log(msg)
-
-    def log_read(self, data: str, handle: str) -> None:
-        msg = {
-            'type': MessageType.READ,
-            'handle': handle,
-            'data': data,
-            'priority': MessagePrio.DEBUG,
-        }
-        self._log(msg)
-
-    def log_write(self, data: str, handle: str) -> None:
-        msg = {
-            'type': MessageType.WRITE,
-            'handle': handle,
-            'data': data,
-            'priority': MessagePrio.DEBUG,
-        }
-        self._log(msg)
-
-    def log_msg(self, data: str, type_: MessageType = MessageType.MESSAGE,
-                prio: MessagePrio = MessagePrio.INFO) -> None:
+    def _log_msg(self, data: str, type_: MessageType = MessageType.MESSAGE,
+                 prio: MessagePrio = MessagePrio.INFO,
+                 tags: Optional[List[str]] = None) -> None:
         msg = {
             'type': type_,
             'priority': prio,
             'data': data,
         }
-        self._log(msg)
+        if tags:
+            msg['tags'] = tags
+        self._log(msg, 4)
 
-    def log_debug(self, data: str) -> None:
-        self.log_msg(data, MessageType.MESSAGE, MessagePrio.DEBUG)
+    def log_msg(self, data: str, type_: MessageType = MessageType.MESSAGE,
+                prio: MessagePrio = MessagePrio.INFO,
+                tags: Optional[List[str]] = None) -> None:
+        msg = {
+            'type': type_,
+            'priority': prio,
+            'data': data,
+        }
+        if tags:
+            msg['tags'] = tags
+        self._log(msg, 3)
 
-    def log_info(self, data: str) -> None:
-        self.log_msg(data, MessageType.MESSAGE, MessagePrio.INFO)
+    def log_preamble(self, data: str) -> None:
+        self._log_msg(data, MessageType.PREAMBLE, MessagePrio.NOTICE)
 
-    def log_warning(self, data: str) -> None:
-        self.log_msg(data, MessageType.MESSAGE, MessagePrio.WARNING)
+    def log_read(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.READ, MessagePrio.DEBUG, tags)
 
-    def log_error(self, data: str) -> None:
-        self.log_msg(data, MessageType.MESSAGE, MessagePrio.ERROR)
+    def log_write(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.WRITE, MessagePrio.DEBUG, tags)
 
-    def log_summary(self, data: str) -> None:
-        self.log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE)
+    def log_debug(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.MESSAGE, MessagePrio.DEBUG, tags)
 
+    def log_info(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.MESSAGE, MessagePrio.INFO, tags)
 
-# This is the module level default logger.
-_logger = Logger()
+    def log_warning(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.MESSAGE, MessagePrio.WARNING, tags)
 
+    def log_error(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.MESSAGE, MessagePrio.ERROR, tags)
 
-def set_options(component: str = 'root', timefmt: str = '%c') -> None:
-    global _logger
-    _logger = Logger(component=component, timefmt=timefmt)
-
-
-def log_preamble(data: str) -> None:
-    _logger.log_preamble(data)
-
-
-def log_msg(data: str, type_: MessageType = MessageType.INFO) -> None:
-    _logger.log_msg(data)
-
-
-def log_write(data: str, handle: str) -> None:
-    _logger.log_write(data, handle)
-
-
-def log_read(data: str, handle: str) -> None:
-    _logger.log_read(data, handle)
-
-
-def log_debug(data: str) -> None:
-    log_msg(data, MessageType.DEBUG)
-
-
-def log_info(data: str) -> None:
-    log_msg(data, MessageType.INFO)
-
-
-def log_warning(data: str) -> None:
-    log_msg(data, MessageType.WARNING)
-
-
-def log_error(data: str) -> None:
-    log_msg(data, MessageType.ERROR)
-
-
-def log_summary(data: str) -> None:
-    log_msg(data, MessageType.SUMMARY)
+    def log_summary(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE, tags)
