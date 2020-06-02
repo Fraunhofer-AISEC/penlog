@@ -36,46 +36,46 @@ setup() {
 
 @test "data from multiple files to stdout" {
 	local out
-	echo "$expected" > "/tmp/expected"
-	echo "$expected" >> "/tmp/expected"
+	echo "$expected" > "$BATS_TMPDIR/expected"
+	echo "$expected" >> "$BATS_TMPDIR/expected"
 	out="$(hr "${HRFLAGS[@]}" example.log.json example.log.json)"
-	compstr "$out" "$(cat /tmp/expected)"
-	rm "/tmp/expected"
+	compstr "$out" "$(cat $BATS_TMPDIR/expected)"
+	rm "$BATS_TMPDIR/expected"
 }
 
 @test "data from pipe to file without filters" {
 	local out
-	echo "$data" | hr "${HRFLAGS[@]}" -f "/tmp/foo.log" > /dev/null
-	out="$(cat /tmp/foo.log)"
+	echo "$data" | hr "${HRFLAGS[@]}" -f "$BATS_TMPDIR/foo.log" > /dev/null
+	out="$(cat $BATS_TMPDIR/foo.log)"
 	compstr "$out" "$data"
-	rm "/tmp/foo.log"
+	rm "$BATS_TMPDIR/foo.log"
 }
 
 @test "data from pipe to multiple files without filters" {
 	local out
-	echo "$data" | hr "${HRFLAGS[@]}" -f "/tmp/foo.log" -f "/tmp/foo2.log" > /dev/null
-	out="$(cat /tmp/foo.log)"
-	out2="$(cat /tmp/foo2.log)"
+	echo "$data" | hr "${HRFLAGS[@]}" -f "$BATS_TMPDIR/foo.log" -f "$BATS_TMPDIR/foo2.log" > /dev/null
+	out="$(cat $BATS_TMPDIR/foo.log)"
+	out2="$(cat $BATS_TMPDIR/foo2.log)"
 	compstr "$out" "$data"
 	compstr "$out2" "$data"
-	rm "/tmp/foo2.log"
-	rm "/tmp/foo.log"
+	rm "$BATS_TMPDIR/foo2.log"
+	rm "$BATS_TMPDIR/foo.log"
 }
 
 @test "data from pipe to compressed file" {
 	local out
-	echo "$data" | hr "${HRFLAGS[@]}" -f "/tmp/foo.log.gz" > /dev/null
-	out="$(zcat /tmp/foo.log.gz)"
+	echo "$data" | hr "${HRFLAGS[@]}" -f "$BATS_TMPDIR/foo.log.gz" > /dev/null
+	out="$(zcat $BATS_TMPDIR/foo.log.gz)"
 	compstr "$out" "$data"
-	rm "/tmp/foo.log.gz"
+	rm "$BATS_TMPDIR/foo.log.gz"
 }
 
 @test "data from file with priorities redirected to file" {
 	local out
-	hr "${HRFLAGS[@]}" example-colors.log.json > "/tmp/foo.log"
-	out="$(cat /tmp/foo.log)"
+	hr "${HRFLAGS[@]}" example-colors.log.json > "$BATS_TMPDIR/foo.log"
+	out="$(cat $BATS_TMPDIR/foo.log)"
 	compstr "$out" "$expected_colors_stripped"
-	rm "/tmp/foo.log"
+	rm "$BATS_TMPDIR/foo.log"
 }
 
 @test "data from file with priorities to stdout" {
