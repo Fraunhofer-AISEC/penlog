@@ -1,7 +1,7 @@
 GO ?= go
 
 hr:
-	$(GO) build $(GOFLAGS) -o $@ ./bin/$@
+	$(GO) build $(GOFLAGS) -o $@ ./bin/$@/...
 
 man:
 	$(MAKE) -C man
