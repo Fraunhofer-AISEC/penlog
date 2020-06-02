@@ -13,6 +13,7 @@ jobs:
           name: clitest
           command: |
               export PATH=$PATH:$PWD
+              export GOFLAGS="-race"
               make hr clitest
       - run:
           name: man
