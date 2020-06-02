@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -57,8 +58,10 @@ func NewLogger(component string, w io.Writer) *Logger {
 			component = "root"
 		}
 	}
-	if _, ok := os.LookupEnv("PENLOG_LINES"); ok {
-		lines = 3
+	if rawVal, ok := os.LookupEnv("PENLOG_LINES"); ok {
+		if val, err := strconv.ParseBool(rawVal); val && err == nil {
+			lines = 3
+		}
 	}
 
 	return &Logger{
