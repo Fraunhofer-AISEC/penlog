@@ -1,0 +1,8 @@
+{ "timestamp": "2020-04-02T12:48:08.906523", "component": "scanner", "type": "msg", "data": "Starting tshark", "host": "kronos", "priority": 0 }
+{ "timestamp": "2020-04-02T12:48:09.583521", "component": "moncay", "type": "msg", "data": "Doing stuff", "host": "kronos", "priority": 1}
+{ "timestamp": "2020-04-02T12:48:09.583521", "component": "moncay", "type": "msg", "data": "Doing stuff", "host": "kronos", "priority": 2}
+{ "timestamp": "2020-04-02T12:48:09.583521", "component": "moncay", "type": "msg", "data": "Doing stuff", "host": "kronos", "priority": 3}
+{ "timestamp": "2020-04-02T12:48:09.583521", "component": "moncay", "type": "msg", "data": "Doing stuff", "host": "kronos", "priority": 4}
+{ "timestamp": "2020-04-02T12:48:09.583521", "component": "moncay", "type": "msg", "data": "Doing stuff", "host": "kronos", "priority": 5}
+{ "timestamp": "2020-04-02T12:48:09.583521", "component": "moncay", "type": "msg", "data": "Doing stuff", "host": "kronos", "priority": 6}
+{ "timestamp": "2020-04-02T12:48:09.583521", "component": "moncay", "type": "msg", "data": "Doing stuff", "host": "kronos", "priority": 7}

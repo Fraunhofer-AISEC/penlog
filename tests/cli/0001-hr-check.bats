@@ -9,6 +9,9 @@ HRFLAGS=("--complen=8" "--typelen=7")
 setup() {
 	data="$(cat example.log.json)"
 	expected="$(cat example.log)"
+	data_color="$(cat example-colors.log.json)"
+	expected_colors="$(cat example-colors.log)"
+	expected_colors_stripped="$(cat example-colors-stripped.log)"
 }
 
 @test "data from pipe to stdout" {
@@ -57,4 +60,18 @@ setup() {
 	out="$(zcat /tmp/foo.log.gz)"
 	compstr "$out" "$data"
 	rm "/tmp/foo.log.gz"
+}
+
+@test "data from file with priorities redirected to file" {
+	local out
+	hr "${HRFLAGS[@]}" example-colors.log.json > "/tmp/foo.log"
+	out="$(cat /tmp/foo.log)"
+	compstr "$out" "$expected_colors_stripped"
+	rm "/tmp/foo.log"
+}
+
+@test "data from file with priorities to stdout" {
+	local out
+	out="$(env PENLOG_FORCE_COLORS=1 hr --colors=true "${HRFLAGS[@]}" example-colors.log.json)"
+	compstr "$out" "$expected_colors"
 }

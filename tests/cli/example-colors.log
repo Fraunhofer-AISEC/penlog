@@ -1,0 +1,8 @@
+Apr  2 12:48:08.906 {scanner } [msg    ]: [1m[31mStarting tshark[0m[0m
+Apr  2 12:48:09.583 {moncay  } [msg    ]: [1m[31mDoing stuff[0m[0m
+Apr  2 12:48:09.583 {moncay  } [msg    ]: [1m[31mDoing stuff[0m[0m
+Apr  2 12:48:09.583 {moncay  } [msg    ]: [1m[31mDoing stuff[0m[0m
+Apr  2 12:48:09.583 {moncay  } [msg    ]: [1m[33mDoing stuff[0m[0m
+Apr  2 12:48:09.583 {moncay  } [msg    ]: [1mDoing stuff[0m
+Apr  2 12:48:09.583 {moncay  } [msg    ]: Doing stuff
+Apr  2 12:48:09.583 {moncay  } [msg    ]: [0;38;5;245mDoing stuff[0m
