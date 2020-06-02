@@ -51,13 +51,20 @@ If `FILE` has the file extension `.gz` (gzip) or `zst` (zstd) it is automaticall
     Formatstring for one logline, default: `"%s {%s} [%s]: %s"`
     The arguments are: `timestamp`, `component`, `type`, and `message`.
 
-`-t` int::
-`--typelen` int::
-    The lenghth of the type field (default 8).
+`-p` string::
+`--priority` string::
+    Only display messages with the priority < `string`.
+    An integer or a string can be specified.
+    The following strings are recognized: `debug`, `info`, `notice`, `warning`, `error`, `critical`, `alert`, `emergency`.
+    This option only applies to the human readable output.
 
 `-s` string::
 `--timespec` string::
     The golang timspec for the timestamp, default: `"Jan _2 15:04:05.000"`.
+
+`-t` int::
+`--typelen` int::
+    The lenghth of the type field (default 8).
 
 == Examples
 

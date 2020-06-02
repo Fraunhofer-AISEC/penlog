@@ -62,6 +62,7 @@ type converter struct {
 	logFmt      string
 	colors      bool
 	showLines   bool
+	prioLevel   int
 
 	cleanedUp   bool
 	workers     int
@@ -115,6 +116,34 @@ func (c *converter) addFilterSpecs(specs []string) {
 	c.initializeOutstreams()
 }
 
+func (c *converter) addPrioFilter(spec string) error {
+	if val, err := strconv.ParseInt(spec, 10, 64); err == nil {
+		c.prioLevel = int(val)
+		return nil
+	}
+	switch strings.ToLower(spec) {
+	case "debug":
+		c.prioLevel = 7
+	case "info":
+		c.prioLevel = 6
+	case "notice":
+		c.prioLevel = 5
+	case "warning":
+		c.prioLevel = 4
+	case "error":
+		c.prioLevel = 3
+	case "critical":
+		c.prioLevel = 2
+	case "alert":
+		c.prioLevel = 1
+	case "emergency":
+		c.prioLevel = 0
+	default:
+		return fmt.Errorf("invalid priolevel '%s'", spec)
+	}
+	return nil
+}
+
 func (c *converter) initializeOutstreams() {
 	if c.workers > 0 {
 		c.workers++
@@ -130,7 +159,10 @@ func (c *converter) initializeOutstreams() {
 }
 
 func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
-	var payload string
+	var (
+		payload  string
+		priority int = 7 // This is the max according the the RFC.
+	)
 
 	ts, err := castField(data, "timestamp")
 	if err != nil {
@@ -144,11 +176,19 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if prio, ok := data["priority"]; ok {
+		if p, ok := prio.(float64); ok {
+			priority = int(p)
+		}
+	}
 
 	if !isFilterMatch(comp, c.compFilters) {
 		return "", errIsFiltered
 	}
 	if !isFilterMatch(msgType, c.typeFilters) {
+		return "", errIsFiltered
+	}
+	if priority > c.prioLevel {
 		return "", errIsFiltered
 	}
 
@@ -170,23 +210,19 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 
 	fmtStr := "%s"
 	if c.colors {
-		if prio, ok := data["priority"]; ok {
-			if p, ok := prio.(float64); ok {
-				switch p {
-				case penlog.PrioEmergency,
-					penlog.PrioAlert,
-					penlog.PrioCritical,
-					penlog.PrioError:
-					fmtStr = colorize(colorBold, colorize(colorRed, "%s"))
-				case penlog.PrioWarning:
-					fmtStr = colorize(colorBold, colorize(colorYellow, "%s"))
-				case penlog.PrioNotice:
-					fmtStr = colorize(colorBold, "%s")
-				case penlog.PrioInfo:
-				case penlog.PrioDebug:
-					fmtStr = colorize(colorGray, "%s")
-				}
-			}
+		switch priority {
+		case penlog.PrioEmergency,
+			penlog.PrioAlert,
+			penlog.PrioCritical,
+			penlog.PrioError:
+			fmtStr = colorize(colorBold, colorize(colorRed, "%s"))
+		case penlog.PrioWarning:
+			fmtStr = colorize(colorBold, colorize(colorYellow, "%s"))
+		case penlog.PrioNotice:
+			fmtStr = colorize(colorBold, "%s")
+		case penlog.PrioInfo:
+		case penlog.PrioDebug:
+			fmtStr = colorize(colorGray, "%s")
 		}
 	}
 	payload = fmt.Sprintf(fmtStr, payload)
@@ -444,9 +480,10 @@ func getReader(filename string) io.Reader {
 
 func main() {
 	var (
-		filterSpecs []string
-		colorsCli   bool
-		conv        = converter{
+		filterSpecs  []string
+		prioLevelRaw string
+		colorsCli    bool
+		conv         = converter{
 			pool:        helpers.CreateMemPool(),
 			workers:     0,
 			broadcastCh: make(chan []byte),
@@ -459,6 +496,7 @@ func main() {
 	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
 	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.typeLen, "typelen", "t", 8, "len of type field")
+	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringVarP(&conv.logFmt, "logformat", "l", "%s {%s} [%s]: %s", "formatstring for a logline")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file, you can add filters: COMPONENT1:FILTER1:FILENAME")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
@@ -467,18 +505,22 @@ func main() {
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
-			fmt.Printf("could not create CPU profile: %s\n", err)
+			fmt.Fprintf(os.Stderr, "could not create CPU profile: %s\n", err)
 			os.Exit(1)
 		}
 		defer f.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
-			fmt.Printf("could not start CPU profile: %s\n", err)
+			fmt.Fprintf(os.Stderr, "could not start CPU profile: %s\n", err)
 			os.Exit(1)
 		}
 		defer pprof.StopCPUProfile()
 	}
 
 	conv.addFilterSpecs(filterSpecs)
+	if err := conv.addPrioFilter(prioLevelRaw); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	var (
 		reader  io.Reader = os.Stdin
