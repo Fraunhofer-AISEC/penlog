@@ -95,6 +95,9 @@ class Logger:
     def log_info(self, data: str, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.INFO, tags)
 
+    def log_notice(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.MESSAGE, MessagePrio.NOTICE, tags)
+
     def log_warning(self, data: str, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.WARNING, tags)
 

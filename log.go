@@ -191,6 +191,14 @@ func (l *Logger) LogWarningf(format string, v ...interface{}) {
 	l.logMessagef(msgTypeMessage, PrioWarning, nil, format, v...)
 }
 
+func (l *Logger) LogNotice(v ...interface{}) {
+	l.logMessage(msgTypeMessage, PrioNotice, nil, v...)
+}
+
+func (l *Logger) LogNoticef(format string, v ...interface{}) {
+	l.logMessagef(msgTypeMessage, PrioNotice, nil, format, v...)
+}
+
 func (l *Logger) LogInfo(v ...interface{}) {
 	l.logMessage(msgTypeMessage, PrioInfo, nil, v...)
 }
