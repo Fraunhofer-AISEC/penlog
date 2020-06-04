@@ -545,6 +545,11 @@ func main() {
 			}
 		}
 	}
+	if valRaw, ok := os.LookupEnv("PENLOG_SHOW_LINES"); ok {
+		if val, err := strconv.ParseBool(valRaw); val && err == nil {
+			conv.showLines = val
+		}
+	}
 
 	if isatty(uintptr(syscall.Stdin)) {
 		for _, file := range pflag.Args() {

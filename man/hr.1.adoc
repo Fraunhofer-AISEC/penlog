@@ -80,6 +80,11 @@ Archive testrun into multiple files; only show info on stdout:
 
     $ fancy-command | hr -f info:- -f error:errors.json.zst -f all.json.zst
 
+== Environment Variables
+
+`PENLOG_SHOW_LINES` bool::
+    Can be used to overwrite the value of the `--lines` flag.
+
 == See Also
 
 penlog(7), penlog-pest-practice(7)
