@@ -82,8 +82,7 @@ Archive testrun into multiple files; only show info on stdout:
 
 == Environment Variables
 
-`PENLOG_SHOW_LINES` bool::
-    Can be used to overwrite the value of the `--lines` flag.
+hr(1) follows the recommendations described in penlog(7) for environment variables.
 
 == See Also
 
