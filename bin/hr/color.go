@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"os"
+)
+
 const (
 	colorNop    = ""
 	colorReset  = "\033[0m"
@@ -19,4 +24,12 @@ func colorize(color, s string) string {
 		return s
 	}
 	return color + s + colorReset
+}
+
+func colorEprintf(color string, colorized bool, format string, args ...interface{}) {
+	if colorized {
+		fmt.Fprintf(os.Stderr, colorize(color, format), args...)
+	} else {
+		fmt.Fprintf(os.Stderr, format, args...)
+	}
 }

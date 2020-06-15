@@ -227,7 +227,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 		if jsonLine := scanner.Bytes(); len(bytes.TrimSpace(jsonLine)) > 0 {
 			var data map[string]interface{}
 			if err := json.Unmarshal(jsonLine, &data); err != nil {
-				// TODO: log error here
+				colorEprintf(colorRed, c.colors, "error: %s\n", jsonLine)
 				continue
 			}
 			if c.workers > 0 {
@@ -249,7 +249,7 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 			if c.stdoutFilter != nil {
 				d, err = c.stdoutFilter.filter(d)
 				if err != nil {
-					// TODO: log error
+					colorEprintf(colorRed, c.colors, "error: %s\n", jsonLine)
 					continue
 				}
 				if d == nil {
@@ -267,27 +267,15 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 				fmt.Println(hrLine)
 			} else {
 				if errors.Is(err, errInvalidData) {
-					if c.colors {
-						fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), err)
-					} else {
-						fmt.Fprintf(os.Stderr, "error: %s\n", err)
-					}
+					colorEprintf(colorRed, c.colors, "error: %s\n", err)
 					continue
 				}
-				if c.colors {
-					fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), scanner.Text())
-				} else {
-					fmt.Fprintf(os.Stderr, "error: %s\n", scanner.Text())
-				}
+				colorEprintf(colorRed, c.colors, "error: %s\n", scanner.Text())
 			}
 		}
 	}
 	if scanner.Err() != nil {
-		if c.colors {
-			fmt.Fprintf(os.Stderr, colorize(colorRed, "error: read: %s\n"), scanner.Err())
-		} else {
-			fmt.Fprintf(os.Stderr, "error: read: %s\n", scanner.Err())
-		}
+		colorEprintf(colorRed, c.colors, "error: %s\n", scanner.Err())
 	}
 }
 
