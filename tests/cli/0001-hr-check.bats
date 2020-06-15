@@ -47,7 +47,7 @@ setup() {
 	local out
 	echo "$data" | hr "${HRFLAGS[@]}" -f "$BATS_TMPDIR/foo.log" > /dev/null
 	out="$(cat $BATS_TMPDIR/foo.log)"
-	compstr "$out" "$data"
+	compjson "$out" "$data"
 	rm "$BATS_TMPDIR/foo.log"
 }
 
@@ -56,8 +56,8 @@ setup() {
 	echo "$data" | hr "${HRFLAGS[@]}" -f "$BATS_TMPDIR/foo.log" -f "$BATS_TMPDIR/foo2.log" > /dev/null
 	out="$(cat $BATS_TMPDIR/foo.log)"
 	out2="$(cat $BATS_TMPDIR/foo2.log)"
-	compstr "$out" "$data"
-	compstr "$out2" "$data"
+	compjson "$out" "$data"
+	compjson "$out2" "$data"
 	rm "$BATS_TMPDIR/foo2.log"
 	rm "$BATS_TMPDIR/foo.log"
 }
@@ -66,7 +66,7 @@ setup() {
 	local out
 	echo "$data" | hr "${HRFLAGS[@]}" -f "$BATS_TMPDIR/foo.log.gz" > /dev/null
 	out="$(zcat $BATS_TMPDIR/foo.log.gz)"
-	compstr "$out" "$data"
+	compjson "$out" "$data"
 	rm "$BATS_TMPDIR/foo.log.gz"
 }
 
