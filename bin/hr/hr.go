@@ -89,7 +89,7 @@ func (c *converter) cleanup() {
 
 func (c *converter) addFilterSpecs(specs []string) {
 	for _, spec := range specs {
-		filter, err := parseFilter(spec)
+		filter, err := parseSimpleFilter(spec)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -363,7 +363,7 @@ func removeEmpy(data []string) []string {
 	return b
 }
 
-func parseFilter(filterexpr string) (map[string][]string, error) {
+func parseSimpleFilter(filterexpr string) (map[string][]string, error) {
 	var (
 		parts = strings.SplitN(filterexpr, ":", 3)
 		res   = make(map[string][]string)
