@@ -113,3 +113,10 @@ setup() {
 	out="$(hr -p emergency "${HRFLAGS[@]}" example-colors.log.json)"
 	compstr "$out" "$expected_prio_emergency"
 }
+
+@test "pipe arbitrary data through hr" {
+	local out
+
+	out="$(echo hans | hr 2>&1)"
+	compstr "$out" "error: hans"
+}
