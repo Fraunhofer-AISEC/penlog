@@ -1,6 +1,6 @@
-== License
+== Bugs
 
-This document is published under the Apache-2.0 license.
+This project is maintained on Github: https://github.com/Fraunhofer-AISEC/penlog.
 
 == Authors
 
@@ -9,6 +9,7 @@ Current maintainers are:
 * Stefan Tatschner <stefan@rumpelsepp.org>
 * Tobias Specht
 
-== Bugs
+== License
 
-This project is maintained on Github: https://github.com/Fraunhofer-AISEC/penlog.
+This document is published under the Apache-2.0 license.
+The license of the code can be obtained from the Git repository.

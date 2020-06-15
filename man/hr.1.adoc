@@ -43,13 +43,16 @@ If `FILE` has the file extension `.gz` (gzip) or `zst` (zstd) it is automaticall
     The third one only writes messages from `comonent` and `type` into `file`.
     Filters to stdout can be applied using the filename `-`.
 
+`-j` string::
+`--jq` string::
+    Pass this string as an argument to the jq(1) utility.
+    `jq` is used as a preprocessor for the entire data; no file based filters are possible.
+    This is equivalent to running `hr` in a pipeline: `zcat FILE | jq -c "FILTER" | hr`.
+    The advantage is automatic decompression of archived files and easier typing.
+    Be aware of dragons if your `jq` filter becomes too complex and alters the json data too much.
+
 `--lines`::
     Enable or disable the output of optional linenumbers.
-
-`-l` string::
-`--logformat` string::
-    Formatstring for one logline, default: `"%s {%s} [%s]: %s"`
-    The arguments are: `timestamp`, `component`, `type`, and `message`.
 
 `-p` string::
 `--priority` string::
