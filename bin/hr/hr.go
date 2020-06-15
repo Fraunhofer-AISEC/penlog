@@ -69,14 +69,13 @@ func (c *converter) cleanup() {
 	c.mutex.Unlock()
 }
 
-func (c *converter) addFilterSpecs(specs []string) {
+func (c *converter) addFilterSpecs(specs []string) error {
 	for _, spec := range specs {
 		switch determineFilterType(spec) {
 		case filterTypeSimple:
 			filter, err := parseSimpleFilter(spec)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				return err
 			}
 			// stdout requires special treatment.
 			if filter.simpleSpec.filename == "-" {
@@ -86,8 +85,7 @@ func (c *converter) addFilterSpecs(specs []string) {
 
 			file, err := os.Create(filter.simpleSpec.filename)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				return err
 			}
 
 			dataCh := make(chan map[string]interface{})
@@ -99,6 +97,7 @@ func (c *converter) addFilterSpecs(specs []string) {
 		}
 	}
 	c.initializeOutstreams()
+	return nil
 }
 
 func (c *converter) addPrioFilter(spec string) error {
@@ -222,7 +221,22 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 	return fmt.Sprintf(c.logFmt, ts, comp, msgType, payload), nil
 }
 
-func (c *converter) transform(scanner *bufio.Scanner) {
+func (c *converter) transform(r io.Reader) {
+	var (
+		err     error
+		jq      *exec.Cmd
+		scanner = bufio.NewScanner(r)
+	)
+	if c.jq != "" {
+		scanner, jq, err = createJQ(r, c.jq)
+		if err != nil {
+			panic(err)
+		}
+		defer func() {
+			jq.Process.Kill()
+			jq.Wait()
+		}()
+	}
 	for scanner.Scan() {
 		if jsonLine := scanner.Bytes(); len(bytes.TrimSpace(jsonLine)) > 0 {
 			var data map[string]interface{}
@@ -369,27 +383,29 @@ func main() {
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "could not create CPU profile: %s\n", err)
+			colorEprintf(colorRed, conv.colors, "could not create CPU profile: %s\n", err)
 			os.Exit(1)
 		}
 		defer f.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
-			fmt.Fprintf(os.Stderr, "could not start CPU profile: %s\n", err)
+			colorEprintf(colorRed, conv.colors, "could not start CPU profile: %s\n", err)
 			os.Exit(1)
 		}
 		defer pprof.StopCPUProfile()
 	}
 
-	conv.addFilterSpecs(filterSpecs)
+	if err := conv.addFilterSpecs(filterSpecs); err != nil {
+		colorEprintf(colorRed, conv.colors, "error: %s\n", err)
+		os.Exit(1)
+	}
 	if err := conv.addPrioFilter(prioLevelRaw); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		colorEprintf(colorRed, conv.colors, "error: %s\n", err)
 		os.Exit(1)
 	}
 
 	var (
-		reader  io.Reader = os.Stdin
-		scanner           = bufio.NewScanner(reader)
-		c                 = make(chan os.Signal)
+		reader io.Reader = os.Stdin
+		c                = make(chan os.Signal)
 	)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
@@ -415,36 +431,16 @@ func main() {
 		}
 	}
 
-	var jq *exec.Cmd
 	if isatty(uintptr(syscall.Stdin)) {
 		for _, file := range pflag.Args() {
-			reader = getReader(file)
-			if conv.jq != "" {
-				scanner, jq, err = createJQ(reader, conv.jq)
-				if err != nil {
-					panic(err)
-				}
-			} else {
-				scanner = bufio.NewScanner(reader)
-			}
-			conv.transform(scanner)
-			if jq != nil {
-				jq.Process.Kill()
-				jq.Wait()
-			}
-		}
-	} else {
-		if conv.jq != "" {
-			scanner, jq, err = createJQ(reader, conv.jq)
+			reader, err = getReader(file)
 			if err != nil {
 				panic(err)
 			}
+			conv.transform(reader)
 		}
-		conv.transform(scanner)
-		if jq != nil {
-			jq.Process.Kill()
-			jq.Wait()
-		}
+	} else {
+		conv.transform(reader)
 	}
 	conv.cleanup()
 }

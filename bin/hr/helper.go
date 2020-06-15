@@ -66,30 +66,27 @@ func removeEmpy(data []string) []string {
 	return b
 }
 
-func getReader(filename string) io.Reader {
+func getReader(filename string) (io.Reader, error) {
 	var reader io.Reader
 	file, err := os.Open(filename)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
 	switch filepath.Ext(filename) {
 	case ".gz":
 		reader, err = gzip.NewReader(file)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return nil, err
 		}
 	case ".zst":
 		reader, err = zstd.NewReader(file)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return nil, err
 		}
 	default:
 		reader = file
 	}
-	return reader
+	return reader, nil
 }
 
 func copyData(data map[string]interface{}) map[string]interface{} {
