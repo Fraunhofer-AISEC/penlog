@@ -197,6 +197,10 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 		case penlog.PrioDebug:
 			fmtStr = colorize(colorGray, "%s")
 		}
+
+		if comp == "JSON" && msgType == "ERROR" {
+			fmtStr = colorize(colorRed, "%s")
+		}
 	}
 	payload = fmt.Sprintf(fmtStr, payload)
 	if c.showLines {
@@ -288,8 +292,8 @@ func (c *converter) transform(r io.Reader) {
 			}
 		}
 	}
-	if scanner.Err() != nil {
-		colorEprintf(colorRed, c.colors, "error: %s\n", scanner.Err())
+	if err := scanner.Err(); err != nil {
+		colorEprintf(colorRed, c.colors, "error: %s\n", err)
 	}
 }
 
@@ -346,8 +350,25 @@ func createJQ(r io.Reader, filter string) (*bufio.Scanner, *exec.Cmd, error) {
 		return nil, nil, err
 	}
 	go func() {
-		if _, err := io.Copy(jqIn, r); err != nil {
-			panic(err)
+		var (
+			scanner = bufio.NewScanner(r)
+			tmpBuf  = make([]byte, 32*1024)
+		)
+		for scanner.Scan() {
+			var (
+				d    map[string]interface{}
+				data = scanner.Bytes()
+			)
+			if err := json.Unmarshal(data, &d); err == nil {
+				if _, err := io.CopyBuffer(jqIn, bytes.NewReader(data), tmpBuf); err != nil {
+					panic(err)
+				}
+			} else {
+				logError(bufio.NewWriter(jqIn), scanner.Text())
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			logError(bufio.NewWriter(jqIn), err.Error())
 		}
 		jqIn.Close()
 	}()

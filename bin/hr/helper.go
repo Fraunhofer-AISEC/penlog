@@ -53,6 +53,7 @@ func logError(w *bufio.Writer, msg string) {
 	str, _ := json.Marshal(line)
 	w.Write(str)
 	w.WriteRune('\n')
+	w.Flush()
 }
 
 func removeEmpy(data []string) []string {
