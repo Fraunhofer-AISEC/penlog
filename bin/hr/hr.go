@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime/pprof"
@@ -20,56 +21,37 @@ import (
 	"syscall"
 	"time"
 
-	"git.sr.ht/~rumpelsepp/helpers"
 	"github.com/Fraunhofer-AISEC/penlog"
 	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/pflag"
-	"golang.org/x/sys/unix"
-)
-
-const (
-	colorNop    = ""
-	colorReset  = "\033[0m"
-	colorBold   = "\033[1m"
-	colorRed    = "\033[31m"
-	colorGreen  = "\033[32m"
-	colorYellow = "\033[33m"
-	colorBlue   = "\033[34m"
-	colorPurple = "\033[35m"
-	colorCyan   = "\033[36m"
-	colorWhite  = "\033[37m"
-	colorGray   = "\033[0;38;5;245m"
 )
 
 var (
-	errIsFiltered  = errors.New("Line is filtered")
 	errInvalidData = errors.New("Invalid data")
 )
 
-func colorize(color, s string) string {
-	if color == colorNop {
-		return s
-	}
-	return color + s + colorReset
+type compressor interface {
+	io.WriteCloser
+	Flush() error
 }
 
 type converter struct {
-	timespec    string
-	typeFilters []string
-	compFilters []string
-	compLen     int
-	typeLen     int
-	logFmt      string
-	colors      bool
-	showLines   bool
-	prioLevel   int
+	timespec     string
+	compLen      int
+	typeLen      int
+	logFmt       string
+	jq           string
+	colors       bool
+	showLines    bool
+	prioLevel    int
+	filters      []*filter
+	stdoutFilter *filter
 
 	cleanedUp   bool
 	workers     int
-	broadcastCh chan []byte
-	writers     []chan []byte
+	broadcastCh chan map[string]interface{}
+	writers     []chan map[string]interface{}
 	mutex       sync.Mutex
-	pool        sync.Pool
 	wg          sync.WaitGroup
 }
 
@@ -89,29 +71,32 @@ func (c *converter) cleanup() {
 
 func (c *converter) addFilterSpecs(specs []string) {
 	for _, spec := range specs {
-		filter, err := parseSimpleFilter(spec)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		switch determineFilterType(spec) {
+		case filterTypeSimple:
+			filter, err := parseSimpleFilter(spec)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			// stdout requires special treatment.
+			if filter.simpleSpec.filename == "-" {
+				c.stdoutFilter = filter
+				continue
+			}
 
-		// stdout requires special treatment.
-		if filter["file"][0] == "-" {
-			c.compFilters = filter["components"]
-			c.typeFilters = filter["filters"]
-			continue
-		}
+			file, err := os.Create(filter.simpleSpec.filename)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 
-		file, err := os.Create(filter["file"][0])
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			dataCh := make(chan map[string]interface{})
+			c.workers++
+			c.writers = append(c.writers, dataCh)
+			go c.fileWorker(&c.wg, dataCh, file, filter)
+		default:
+			panic("BUG: bogos filter spec")
 		}
-
-		dataCh := make(chan []byte)
-		c.workers++
-		c.writers = append(c.writers, dataCh)
-		go bufferedWriter(&c.wg, &c.pool, dataCh, file, filter)
 	}
 	c.initializeOutstreams()
 }
@@ -147,54 +132,43 @@ func (c *converter) addPrioFilter(spec string) error {
 func (c *converter) initializeOutstreams() {
 	if c.workers > 0 {
 		c.workers++
-		bc := helpers.Broadcaster{
-			InCh:    c.broadcastCh,
-			OutChs:  c.writers,
-			MemPool: &c.pool,
-			WG:      &c.wg,
+		bc := broadcaster{
+			inCh:   c.broadcastCh,
+			outChs: c.writers,
+			wg:     &c.wg,
 		}
-		go bc.Serve()
+		go bc.serve()
 	}
 	c.wg.Add(c.workers)
 }
 
-func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
+func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 	var (
 		payload  string
-		priority int = 7 // This is the max according the the RFC.
+		priority int = penlog.PrioInfo // This prio is not colorized.
 	)
 
-	ts, err := castField(data, "timestamp")
+	ts, err := castField(line, "timestamp")
 	if err != nil {
 		return "", err
 	}
-	comp, err := castField(data, "component")
+	comp, err := castField(line, "component")
 	if err != nil {
 		return "", err
 	}
-	msgType, err := castField(data, "type")
+	msgType, err := castField(line, "type")
 	if err != nil {
 		return "", err
 	}
-	if prio, ok := data["priority"]; ok {
+	if prio, ok := line["priority"]; ok {
 		if p, ok := prio.(float64); ok {
 			priority = int(p)
 		}
 	}
 
-	if !isFilterMatch(comp, c.compFilters) {
-		return "", errIsFiltered
-	}
-	if !isFilterMatch(msgType, c.typeFilters) {
-		return "", errIsFiltered
-	}
-	if priority > c.prioLevel {
-		return "", errIsFiltered
-	}
-
 	// Type switch for the data field. We support string and a list
 	// of strings. The reflect stuff is a bit ugly, but it works... :)
-	switch v := data["data"].(type) {
+	switch v := line["data"].(type) {
 	case []interface{}:
 		d := make([]string, 0, len(v))
 		for _, val := range v {
@@ -227,7 +201,7 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	}
 	payload = fmt.Sprintf(fmtStr, payload)
 	if c.showLines {
-		if line, ok := data["line"]; ok {
+		if line, ok := line["line"]; ok {
 			if c.colors {
 				fmtStr += " " + colorize(colorBlue, "(%s)")
 			} else {
@@ -248,47 +222,50 @@ func (c *converter) genHRLine(data map[string]interface{}) (string, error) {
 	return fmt.Sprintf(c.logFmt, ts, comp, msgType, payload), nil
 }
 
-func (c *converter) transformLine(line []byte) (string, error) {
-	var (
-		err    error
-		parsed map[string]interface{}
-	)
-
-	err = json.Unmarshal(line, &parsed)
-	if err != nil {
-		return "", err
-	}
-
-	hrLine, err := c.genHRLine(parsed)
-	if err != nil {
-		return "", err
-	}
-
-	return hrLine, nil
-}
-
 func (c *converter) transform(scanner *bufio.Scanner) {
 	for scanner.Scan() {
 		if jsonLine := scanner.Bytes(); len(bytes.TrimSpace(jsonLine)) > 0 {
+			var data map[string]interface{}
+			if err := json.Unmarshal(jsonLine, &data); err != nil {
+				// TODO: log error here
+				continue
+			}
 			if c.workers > 0 {
-				buf := helpers.GetSlice(&c.pool, len(jsonLine))
-				n := copy(buf, jsonLine)
 				c.mutex.Lock()
 				// Avoid sends on closed channel by signal handler.
 				if c.cleanedUp {
 					c.mutex.Unlock()
 					break
 				}
-				c.broadcastCh <- buf[:n]
+				d := copyData(data)
+				c.broadcastCh <- d
 				c.mutex.Unlock()
 			}
 
-			if hrLine, err := c.transformLine(jsonLine); err == nil {
-				fmt.Println(hrLine)
-			} else {
-				if err == errIsFiltered {
+			var (
+				err error
+				d   = copyData(data)
+			)
+			if c.stdoutFilter != nil {
+				d, err = c.stdoutFilter.filter(d)
+				if err != nil {
+					// TODO: log error
 					continue
 				}
+				if d == nil {
+					continue
+				}
+			}
+			if prio, ok := d["priority"]; ok {
+				if p, ok := prio.(float64); ok {
+					if int(p) > c.prioLevel {
+						continue
+					}
+				}
+			}
+			if hrLine, err := c.transformLine(d); err == nil {
+				fmt.Println(hrLine)
+			} else {
 				if errors.Is(err, errInvalidData) {
 					if c.colors {
 						fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), err)
@@ -297,7 +274,6 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 					}
 					continue
 				}
-
 				if c.colors {
 					fmt.Fprintf(os.Stderr, colorize(colorRed, "error: %s\n"), scanner.Text())
 				} else {
@@ -315,102 +291,8 @@ func (c *converter) transform(scanner *bufio.Scanner) {
 	}
 }
 
-func padOrTruncate(s string, maxLen int) string {
-	res := s
-	if len(s) > maxLen {
-		res = s[:maxLen]
-	} else if len(s) < maxLen {
-		res += strings.Repeat(" ", maxLen-len(s))
-	}
-	return res
-}
-
-func isatty(fd uintptr) bool {
-	_, err := unix.IoctlGetTermios(int(fd), unix.TCGETS)
-	return err == nil
-}
-
-func castField(data map[string]interface{}, field string) (string, error) {
-	if vIface, ok := data[field]; ok {
-		if vString, ok := vIface.(string); ok {
-			return vString, nil
-		}
-		return "", fmt.Errorf("%w: field '%s' is not a string", errInvalidData, field)
-	}
-	return "", fmt.Errorf("%w: field '%s' does not exist in data", errInvalidData, field)
-}
-
-func logError(w *bufio.Writer, msg string) {
-	var line = map[string]string{
-		"timestamp": time.Now().Format("2006-01-02T15:04:05.000000"),
-		"data":      msg,
-		"component": "JSON",
-		"type":      "ERROR",
-	}
-	str, _ := json.Marshal(line)
-	w.Write(str)
-	w.WriteRune('\n')
-}
-
-func removeEmpy(data []string) []string {
-	b := data[:0]
-	for _, x := range data {
-		x = strings.TrimSpace(x)
-		if x != "" {
-			b = append(b, x)
-		}
-	}
-	return b
-}
-
-func parseSimpleFilter(filterexpr string) (map[string][]string, error) {
+func (c *converter) fileWorker(wg *sync.WaitGroup, data chan map[string]interface{}, file *os.File, fil *filter) {
 	var (
-		parts = strings.SplitN(filterexpr, ":", 3)
-		res   = make(map[string][]string)
-	)
-	switch len(parts) {
-	// Only a filename ist specified, no filters.
-	case 1:
-		res["file"] = []string{parts[0]}
-	// Filters and filename is availabe.
-	case 2:
-		res["filters"] = removeEmpy(strings.Split(parts[0], ","))
-		res["file"] = []string{parts[1]}
-	// Components, filters, and a filename specified.
-	case 3:
-		res["components"] = removeEmpy(strings.Split(parts[0], ","))
-		res["filters"] = removeEmpy(strings.Split(parts[1], ","))
-		res["file"] = []string{parts[2]}
-	// Filter expression is invalid.
-	default:
-		return res, fmt.Errorf("invalid filter expression")
-	}
-	return res, nil
-}
-
-// FIXME: exclusive is broken, thus missing
-func isFilterMatch(candidate string, filters []string) bool {
-	if len(filters) == 0 {
-		return true
-	}
-	c := strings.ToLower(candidate)
-	for _, filter := range filters {
-		f := strings.ToLower(filter)
-		if c == f {
-			return true
-		}
-	}
-	return false
-}
-
-type compressor interface {
-	io.WriteCloser
-	Flush() error
-}
-
-func bufferedWriter(wg *sync.WaitGroup, pool *sync.Pool, data chan []byte, file *os.File, fspec map[string][]string) {
-	var (
-		parsed     map[string]interface{}
 		fileWriter *bufio.Writer
 		comp       compressor
 	)
@@ -428,19 +310,14 @@ func bufferedWriter(wg *sync.WaitGroup, pool *sync.Pool, data chan []byte, file 
 	}
 
 	for line := range data {
-		if err := json.Unmarshal(line, &parsed); err != nil {
-			logError(fileWriter, string(line))
+		l, err := fil.filter(line)
+		if l == nil || err != nil {
 			continue
 		}
-		if !isFilterMatch(parsed["component"].(string), fspec["components"]) {
-			continue
-		}
-		if !isFilterMatch(parsed["type"].(string), fspec["filters"]) {
-			continue
-		}
-		fileWriter.Write(line)
+		// TODO: maybe an encoder works here?
+		b, _ := json.Marshal(l)
+		fileWriter.Write(b)
 		fileWriter.WriteRune('\n')
-		pool.Put(line)
 	}
 
 	fileWriter.Flush()
@@ -452,41 +329,38 @@ func bufferedWriter(wg *sync.WaitGroup, pool *sync.Pool, data chan []byte, file 
 	wg.Done()
 }
 
-func getReader(filename string) io.Reader {
-	var reader io.Reader
-	file, err := os.Open(filename)
+func createJQ(r io.Reader, filter string) (*bufio.Scanner, *exec.Cmd, error) {
+	cmd := exec.Command("jq", "-c", "--unbuffered", filter)
+	cmd.Stderr = os.Stderr
+	jqOut, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, nil, err
 	}
-	switch filepath.Ext(filename) {
-	case ".gz":
-		reader, err = gzip.NewReader(file)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	case ".zst":
-		reader, err = zstd.NewReader(file)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	default:
-		reader = file
+	jqIn, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, nil, err
 	}
-	return reader
+	if err := cmd.Start(); err != nil {
+		return nil, nil, err
+	}
+	go func() {
+		if _, err := io.Copy(jqIn, r); err != nil {
+			panic(err)
+		}
+		jqIn.Close()
+	}()
+	return bufio.NewScanner(jqOut), cmd, nil
 }
 
 func main() {
 	var (
+		err          error
 		filterSpecs  []string
 		prioLevelRaw string
 		colorsCli    bool
 		conv         = converter{
-			pool:        helpers.CreateMemPool(),
 			workers:     0,
-			broadcastCh: make(chan []byte),
+			broadcastCh: make(chan map[string]interface{}),
 			cleanedUp:   false,
 		}
 	)
@@ -494,13 +368,15 @@ func main() {
 	pflag.BoolVar(&colorsCli, "colors", true, "enable colorized output based on priorities")
 	pflag.BoolVar(&conv.showLines, "lines", true, "show line numbers if available")
 	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
+	pflag.StringVarP(&conv.jq, "jq", "j", "", "run the jq tool as a preprocessor")
 	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.typeLen, "typelen", "t", 8, "len of type field")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
-	pflag.StringVarP(&conv.logFmt, "logformat", "l", "%s {%s} [%s]: %s", "formatstring for a logline")
-	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file, you can add filters: COMPONENT1:FILTER1:FILENAME")
+	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
 	pflag.Parse()
+
+	conv.logFmt = "%s {%s} [%s]: %s"
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
@@ -551,14 +427,36 @@ func main() {
 		}
 	}
 
+	var jq *exec.Cmd
 	if isatty(uintptr(syscall.Stdin)) {
 		for _, file := range pflag.Args() {
 			reader = getReader(file)
-			scanner = bufio.NewScanner(reader)
+			if conv.jq != "" {
+				scanner, jq, err = createJQ(reader, conv.jq)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				scanner = bufio.NewScanner(reader)
+			}
 			conv.transform(scanner)
+			if jq != nil {
+				jq.Process.Kill()
+				jq.Wait()
+			}
 		}
 	} else {
+		if conv.jq != "" {
+			scanner, jq, err = createJQ(reader, conv.jq)
+			if err != nil {
+				panic(err)
+			}
+		}
 		conv.transform(scanner)
+		if jq != nil {
+			jq.Process.Kill()
+			jq.Wait()
+		}
 	}
 	conv.cleanup()
 }
