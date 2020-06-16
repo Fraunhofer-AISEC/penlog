@@ -165,6 +165,10 @@ def log_info(data: str, tags: Optional[List[str]] = None) -> None:
     _log_msg(data, MessageType.MESSAGE, MessagePrio.INFO, tags)
 
 
+def log_notice(data: str, tags: Optional[List[str]] = None) -> None:
+    _log_msg(data, MessageType.MESSAGE, MessagePrio.NOTICE, tags)
+
+
 def log_warning(data: str, tags: Optional[List[str]] = None) -> None:
     _log_msg(data, MessageType.MESSAGE, MessagePrio.WARNING, tags)
 
