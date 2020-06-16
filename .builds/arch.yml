@@ -3,6 +3,7 @@ packages:
   - go
   - bash-bats
   - asciidoctor
+  - jq
 
 tasks:
   - build: |
