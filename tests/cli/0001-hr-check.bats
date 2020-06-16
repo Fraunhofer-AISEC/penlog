@@ -117,7 +117,7 @@ setup() {
 @test "pipe arbitrary data through hr" {
 	local out
 
-	out="$(echo hans | hr 2>&1)"
+	out="$(echo hans | hr)"
 	# Strip prefix, as the timestamp is not reproducible.
 	compstr "$(echo $out | sed -e 's/.*: //')" "hans"
 }

@@ -22,3 +22,9 @@ setup() {
 	expected="$(cat example-no-ipc.log)"
 	compstr "$out" "$expected"
 }
+
+@test "jq with invalid json input" {
+	out="$(echo hans | hr -j '.')"
+	compstr "$(echo $out | sed -e 's/.*: //')" "hans"
+}
+

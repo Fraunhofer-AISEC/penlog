@@ -225,6 +225,12 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 	return fmt.Sprintf(c.logFmt, ts, comp, msgType, payload), nil
 }
 
+func fPrintError(w io.Writer, msg string) {
+	line := createErrorRecord(msg)
+	str, _ := json.Marshal(line)
+	fmt.Fprintln(w, string(str))
+}
+
 func (c *converter) printError(msg string) {
 	line := createErrorRecord(msg)
 	str, _ := c.transformLine(line)
@@ -377,15 +383,15 @@ func createJQ(r io.Reader, filter string) (*bufio.Scanner, *exec.Cmd, error) {
 			)
 			if err := json.Unmarshal(data, &d); err == nil {
 				if _, err := io.CopyBuffer(jqIn, bytes.NewReader(data), tmpBuf); err != nil {
-					logError(jqIn, err.Error())
+					fPrintError(jqIn, err.Error())
 					break
 				}
 			} else {
-				logError(jqIn, scanner.Text())
+				fPrintError(jqIn, scanner.Text())
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			logError(jqIn, err.Error())
+			fPrintError(jqIn, err.Error())
 		}
 		jqIn.Close()
 	}()

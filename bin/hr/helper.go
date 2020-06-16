@@ -4,7 +4,6 @@ package main
 
 import (
 	"compress/gzip"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -50,12 +49,6 @@ func createErrorRecord(msg string) map[string]interface{} {
 		"type":      "ERROR",
 	}
 	return record
-}
-
-func logError(w io.Writer, msg string) {
-	line := createErrorRecord(msg)
-	str, _ := json.Marshal(line)
-	fmt.Fprintln(w, str)
 }
 
 func removeEmpy(data []string) []string {
