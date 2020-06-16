@@ -226,12 +226,7 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 }
 
 func (c *converter) printError(msg string) {
-	var line = map[string]interface{}{
-		"timestamp": time.Now().Format("2006-01-02T15:04:05.000000"),
-		"data":      msg,
-		"component": "JSON",
-		"type":      "ERROR",
-	}
+	line := createErrorRecord(msg)
 	str, _ := c.transformLine(line)
 	fmt.Println(str)
 }
@@ -254,10 +249,18 @@ func (c *converter) transform(r io.Reader) {
 	}
 	for scanner.Scan() {
 		if jsonLine := scanner.Bytes(); len(bytes.TrimSpace(jsonLine)) > 0 {
-			var data map[string]interface{}
+			var (
+				data         map[string]interface{}
+				deferredCont = false
+			)
 			if err := json.Unmarshal(jsonLine, &data); err != nil {
 				c.printError(string(jsonLine))
-				continue
+				deferredCont = true
+				// If there are workers avail, send
+				// the error to them as well. The error
+				// needs to be included in the logfiles
+				// as well.
+				data = createErrorRecord(string(jsonLine))
 			}
 			if c.workers > 0 {
 				c.mutex.Lock()
@@ -269,6 +272,10 @@ func (c *converter) transform(r io.Reader) {
 				d := copyData(data)
 				c.broadcastCh <- d
 				c.mutex.Unlock()
+			}
+			if deferredCont {
+				deferredCont = false
+				continue
 			}
 
 			var (
@@ -372,14 +379,15 @@ func createJQ(r io.Reader, filter string) (*bufio.Scanner, *exec.Cmd, error) {
 			)
 			if err := json.Unmarshal(data, &d); err == nil {
 				if _, err := io.CopyBuffer(jqIn, bytes.NewReader(data), tmpBuf); err != nil {
-					panic(err)
+					logError(jqIn, err.Error())
+					break
 				}
 			} else {
-				logError(bufio.NewWriter(jqIn), scanner.Text())
+				logError(jqIn, scanner.Text())
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			logError(bufio.NewWriter(jqIn), err.Error())
+			logError(jqIn, err.Error())
 		}
 		jqIn.Close()
 	}()

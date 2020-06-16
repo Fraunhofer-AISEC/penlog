@@ -29,3 +29,24 @@ setup() {
 	expected="$(cat example-abcd-read-write.log)"
 	compstr "$out" "$expected"
 }
+
+@test "error logs in archived file" {
+	local out
+	echo "hans" | hr -f "$BATS_TMPDIR/foo.log"
+	out="$(jq -r ".data" < "$BATS_TMPDIR/foo.log")"
+	compstr "$out" "hans"
+	rm "$BATS_TMPDIR/foo.log"
+}
+
+@test "error logs in archived files" {
+	local out
+	echo "hans" | hr -f "$BATS_TMPDIR/foo.log" -f "$BATS_TMPDIR/foo1.log"
+
+	out="$(jq -r ".data" < "$BATS_TMPDIR/foo.log")"
+	compstr "$out" "hans"
+	out="$(jq -r ".data" < "$BATS_TMPDIR/foo1.log")"
+	compstr "$out" "hans"
+
+	rm "$BATS_TMPDIR/foo.log"
+	rm "$BATS_TMPDIR/foo1.log"
+}

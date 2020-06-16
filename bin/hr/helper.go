@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bufio"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -43,17 +42,20 @@ func castField(data map[string]interface{}, field string) (string, error) {
 	return "", fmt.Errorf("%w: field '%s' does not exist in data", errInvalidData, field)
 }
 
-func logError(w *bufio.Writer, msg string) {
-	var line = map[string]string{
+func createErrorRecord(msg string) map[string]interface{} {
+	var record = map[string]interface{}{
 		"timestamp": time.Now().Format("2006-01-02T15:04:05.000000"),
 		"data":      msg,
 		"component": "JSON",
 		"type":      "ERROR",
 	}
+	return record
+}
+
+func logError(w io.Writer, msg string) {
+	line := createErrorRecord(msg)
 	str, _ := json.Marshal(line)
-	w.Write(str)
-	w.WriteRune('\n')
-	w.Flush()
+	fmt.Fprintln(w, str)
 }
 
 func removeEmpy(data []string) []string {
