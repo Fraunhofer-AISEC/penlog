@@ -333,15 +333,13 @@ func (c *converter) fileWorker(wg *sync.WaitGroup, data chan map[string]interfac
 		fileWriter = bufio.NewWriter(file)
 	}
 
+	encoder := json.NewEncoder(fileWriter)
 	for line := range data {
 		l, err := fil.filter(line)
 		if l == nil || err != nil {
 			continue
 		}
-		// TODO: maybe an encoder works here?
-		b, _ := json.Marshal(l)
-		fileWriter.Write(b)
-		fileWriter.WriteRune('\n')
+		encoder.Encode(l)
 	}
 
 	fileWriter.Flush()
