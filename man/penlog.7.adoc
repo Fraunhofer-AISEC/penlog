@@ -109,12 +109,12 @@ A verbatim curly brace brace is expressed with two ones: `{{` means `{`.
     Apr  2 12:48:08.906 {scanner } [msg   ]: Starting tshark with
     Apr  2 12:48:09.583 {moncay  } [msg   ]: Doing stuff
 
-If a JSON line cannot be decoded it MUST be prefixed with `error:␣` (␣ is a blank space, ascii 0x20) and included in the output:
+If a JSON line cannot be decoded, the faulty text MUST be included in messages of type `ERROR` and component `JSON`:
 
     $ python -c "import foo" 2>&1 | hr
-    error: Traceback (most recent call last):
-    error:   File "<string>", line 1, in <module>
-    error: ModuleNotFoundError: No module named 'foo'
+    Jun 16 08:19:01.305 {JSON    } [ERROR   ]: Traceback (most recent call last):
+    Jun 16 08:19:01.305 {JSON    } [ERROR   ]:   File "<string>", line 1, in <module>
+    Jun 16 08:19:01.305 {JSON    } [ERROR   ]: ModuleNotFoundError: No module named 'foo'
 
 == Environment Variables
 

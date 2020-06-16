@@ -118,5 +118,6 @@ setup() {
 	local out
 
 	out="$(echo hans | hr 2>&1)"
-	compstr "$out" "error: hans"
+	# Strip prefix, as the timestamp is not reproducible.
+	compstr "$(echo $out | sed -e 's/.*: //')" "hans"
 }

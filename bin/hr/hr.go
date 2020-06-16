@@ -225,6 +225,17 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 	return fmt.Sprintf(c.logFmt, ts, comp, msgType, payload), nil
 }
 
+func (c *converter) printError(msg string) {
+	var line = map[string]interface{}{
+		"timestamp": time.Now().Format("2006-01-02T15:04:05.000000"),
+		"data":      msg,
+		"component": "JSON",
+		"type":      "ERROR",
+	}
+	str, _ := c.transformLine(line)
+	fmt.Println(str)
+}
+
 func (c *converter) transform(r io.Reader) {
 	var (
 		err     error
@@ -245,7 +256,7 @@ func (c *converter) transform(r io.Reader) {
 		if jsonLine := scanner.Bytes(); len(bytes.TrimSpace(jsonLine)) > 0 {
 			var data map[string]interface{}
 			if err := json.Unmarshal(jsonLine, &data); err != nil {
-				colorEprintf(colorRed, c.colors, "error: %s\n", jsonLine)
+				c.printError(string(jsonLine))
 				continue
 			}
 			if c.workers > 0 {
@@ -267,7 +278,7 @@ func (c *converter) transform(r io.Reader) {
 			if c.stdoutFilter != nil {
 				d, err = c.stdoutFilter.filter(d)
 				if err != nil {
-					colorEprintf(colorRed, c.colors, "error: %s\n", jsonLine)
+					c.printError(string(jsonLine))
 					continue
 				}
 				if d == nil {
@@ -285,15 +296,15 @@ func (c *converter) transform(r io.Reader) {
 				fmt.Println(hrLine)
 			} else {
 				if errors.Is(err, errInvalidData) {
-					colorEprintf(colorRed, c.colors, "error: %s\n", err)
+					c.printError(err.Error())
 					continue
 				}
-				colorEprintf(colorRed, c.colors, "error: %s\n", scanner.Text())
+				c.printError(scanner.Text())
 			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		colorEprintf(colorRed, c.colors, "error: %s\n", err)
+		c.printError(err.Error())
 	}
 }
 
