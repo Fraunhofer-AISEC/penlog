@@ -138,6 +138,9 @@ A `bool` is a special string consisting of either `t, T, true, TRUE, 1` or `f, F
 `PENLOG_LINES` (bool)::
     If this environment variable is set, implementations SHOULD emit filenames with line numbers via the `line` field.
 
+`PENLOG_STACKTRACE` (bool)::
+    If this environment variable is set, implementations SHOULD provide stacktraces via the `stacktrace` field.
+
 `PENLOG_SHOW_LINES` bool::
     A switch for implementations which output the human readable form.
     The display of line numbers can be enabled or disabled with this variable.

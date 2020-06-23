@@ -10,19 +10,21 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
 )
 
 type Logger struct {
-	host      string
-	component string
-	timespec  string
-	writer    io.Writer
-	buf       bytes.Buffer
-	mu        sync.Mutex
-	lines     bool
+	host       string
+	component  string
+	timespec   string
+	writer     io.Writer
+	buf        bytes.Buffer
+	mu         sync.Mutex
+	lines      bool
+	stacktrace bool
 }
 
 const (
@@ -52,7 +54,10 @@ func getLineNumber(depth int) string {
 }
 
 func NewLogger(component string, w io.Writer) *Logger {
-	lines := false
+	var (
+		lines      = false
+		stacktrace = false
+	)
 	hostname, err := os.Hostname()
 	// This should not happen!
 	if err != nil {
@@ -70,13 +75,19 @@ func NewLogger(component string, w io.Writer) *Logger {
 			lines = true
 		}
 	}
+	if rawVal, ok := os.LookupEnv("PENLOG_STACKTRACE"); ok {
+		if val, err := strconv.ParseBool(rawVal); val && err == nil {
+			stacktrace = true
+		}
+	}
 
 	return &Logger{
-		host:      hostname,
-		component: component,
-		timespec:  "2006-01-02T15:04:05.000000",
-		lines:     lines,
-		writer:    w,
+		host:       hostname,
+		component:  component,
+		timespec:   "2006-01-02T15:04:05.000000",
+		lines:      lines,
+		stacktrace: stacktrace,
+		writer:     w,
 	}
 }
 
@@ -95,6 +106,9 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 	msg["host"] = l.host
 	if l.lines {
 		msg["line"] = getLineNumber(depth)
+	}
+	if l.stacktrace {
+		msg["stacktrace"] = string(debug.Stack())
 	}
 
 	b, err := json.Marshal(msg)

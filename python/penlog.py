@@ -5,6 +5,7 @@ import json
 import os
 import socket
 import sys
+import traceback
 from datetime import datetime
 from enum import Enum, IntEnum
 from typing import Dict, List, TextIO, Optional
@@ -54,6 +55,8 @@ class Logger:
         msg["timestamp"] = datetime.now().isoformat()
         if os.environ.get("PENLOG_LINES"):
             msg["line"] = _get_line_number(depth)
+        if os.environ.get("PENLOG_STACKTRACE"):
+            msg["stacktrace"] = ''.join(traceback.format_stack())
         print(json.dumps(msg), file=self.file, flush=self.flush)
 
     def _log_msg(self, data: str, type_: MessageType = MessageType.MESSAGE,
@@ -116,6 +119,8 @@ def _log(msg: Dict, depth: int) -> None:
     msg["timestamp"] = datetime.now().isoformat()
     if os.environ.get("PENLOG_LINES"):
         msg["line"] = _get_line_number(depth)
+    if os.environ.get("PENLOG_STACKTRACE"):
+        msg["stacktrace"] = ''.join(traceback.format_stack())
     print(json.dumps(msg), file=sys.stderr, flush=True)
 
 
