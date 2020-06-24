@@ -208,7 +208,7 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 	defer l.mu.Unlock()
 	if rawVal, ok := msg["priority"]; ok {
 		if val, ok := rawVal.(Prio); ok {
-			if val < l.loglevel {
+			if val > l.loglevel {
 				return
 			}
 		}
