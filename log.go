@@ -44,6 +44,7 @@ type Logger struct {
 	lines          bool
 	stacktrace     bool
 	systemdJournal bool
+	loglevel       Prio
 }
 
 const (
@@ -95,6 +96,7 @@ func NewLogger(component string, w io.Writer) *Logger {
 
 	return &Logger{
 		host:           hostname,
+		loglevel:       PrioDebug,
 		component:      component,
 		timespec:       "2006-01-02T15:04:05.000000",
 		lines:          lines,
@@ -108,6 +110,18 @@ func (l *Logger) EnableLines(enable bool) {
 	l.mu.Lock()
 	l.lines = enable
 	l.mu.Unlock()
+}
+
+func (l *Logger) SetLogLevel(prio Prio) {
+	l.mu.Lock()
+	l.loglevel = prio
+	l.mu.Unlock()
+}
+
+func (l *Logger) GetLogLevel(prio Prio) Prio {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.loglevel
 }
 
 func convertVarsForJournal(in map[string]interface{}) map[string]string {
@@ -171,6 +185,13 @@ func (l *Logger) outputJournal(msg map[string]interface{}) {
 func (l *Logger) output(msg map[string]interface{}, depth int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if rawVal, ok := msg["priority"]; ok {
+		if val, ok := rawVal.(Prio); ok {
+			if val < l.loglevel {
+				return
+			}
+		}
+	}
 
 	msg["timestamp"] = time.Now().Format(l.timespec)
 	msg["component"] = l.component
