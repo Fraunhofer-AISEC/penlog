@@ -248,7 +248,9 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 			}
 		}
 	}
-	msg["timestamp"] = time.Now().Format(l.timespec)
+	now := time.Now()
+	msg["timestamp"] = now.Format(l.timespec)
+	msg["timezone"] = now.Format("-0700")
 	msg["component"] = l.component
 	msg["host"] = l.host
 	if l.lines {
