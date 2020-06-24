@@ -86,6 +86,9 @@ func NewLogger(component string, w io.Writer) *Logger {
 		hrFormatter = NewHRFormatter()
 	)
 	switch strings.ToLower(os.Getenv("PENLOG_OUTPUT")) {
+	case "":
+		outputType = OutTypeHRTiny
+		hrFormatter.TinyFormat = true
 	case "hr":
 		outputType = OutTypeHR
 		hrFormatter.TinyFormat = false
@@ -97,8 +100,7 @@ func NewLogger(component string, w io.Writer) *Logger {
 	case "systemd":
 		outputType = OutTypeSystemdJournal
 	default:
-		outputType = OutTypeHRTiny
-		hrFormatter.TinyFormat = true
+		panic("invalid penlog output")
 	}
 	if outputType == OutTypeSystemdJournal && !journal.Enabled() {
 		panic("systemd-journal is not available")
