@@ -12,11 +12,11 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"git.sr.ht/~rumpelsepp/helpers"
 	"github.com/coreos/go-systemd/v22/journal"
 )
 
@@ -55,15 +55,6 @@ func getLineNumber(depth int) string {
 		return fmt.Sprintf("%s:%d", file, line)
 	}
 	return ""
-}
-
-func getEnvBool(name string) bool {
-	if rawVal, ok := os.LookupEnv(name); ok {
-		if val, err := strconv.ParseBool(rawVal); val && err == nil {
-			return val
-		}
-	}
-	return false
 }
 
 type Logger struct {
@@ -143,8 +134,8 @@ func NewLogger(component string, w io.Writer) *Logger {
 		loglevel:    loglevel,
 		component:   component,
 		timespec:    "2006-01-02T15:04:05.000000",
-		lines:       getEnvBool("PENLOG_CAPTURE_LINES"),
-		stacktrace:  getEnvBool("PENLOG_CAPTURE_STACKTRACES"),
+		lines:       helpers.GetEnvBool("PENLOG_CAPTURE_LINES"),
+		stacktrace:  helpers.GetEnvBool("PENLOG_CAPTURE_STACKTRACES"),
 		outputType:  outputType,
 		writer:      w,
 	}
@@ -168,9 +159,13 @@ func (l *Logger) SetOutputType(t OutType) {
 
 func (l *Logger) SetColors(enable bool) {
 	l.mu.Lock()
-	if l.hrFormatter != nil {
-		l.hrFormatter.ShowColors = enable
-	}
+	l.hrFormatter.ShowColors = enable
+	l.mu.Unlock()
+}
+
+func (l *Logger) SetLevelPrefix(enable bool) {
+	l.mu.Lock()
+	l.hrFormatter.ShowLevelPrefix = enable
 	l.mu.Unlock()
 }
 
@@ -347,6 +342,14 @@ func (l *Logger) logMessagef(msgType string, prio Prio, tags []string, format st
 func (l *Logger) Write(p []byte) (int, error) {
 	l.logMessage(msgTypeMessage, PrioInfo, nil, string(p))
 	return len(p), nil
+}
+
+func (l *Logger) Print(v ...interface{}) {
+	l.logMessage(msgTypeMessage, PrioInfo, nil, v...)
+}
+
+func (l *Logger) Printf(format string, v ...interface{}) {
+	l.logMessagef(msgTypeMessage, PrioInfo, nil, format, v...)
 }
 
 func (l *Logger) LogPreamble(v ...interface{}) {

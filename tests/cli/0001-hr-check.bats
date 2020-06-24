@@ -78,13 +78,13 @@ setup() {
 	rm "$BATS_TMPDIR/foo.log"
 }
 
-@test "data from file with priorities to stdout" {
+@test "force colors using pipes" {
 	local out
 	out="$(env PENLOG_FORCE_COLORS=1 hr --colors=true "${HRFLAGS[@]}" example-colors.log.json)"
 	compstr "$out" "$expected_colors"
 }
 
-@test "data from file with prioritiy filter to stdout" {
+@test "data from file with priority filter to stdout" {
 	local out
 	local HRFLAGS
 	HRFLAGS=("--complen=8" "--typelen=8")

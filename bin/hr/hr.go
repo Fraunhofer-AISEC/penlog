@@ -19,8 +19,8 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
+	"git.sr.ht/~rumpelsepp/helpers"
 	"github.com/Fraunhofer-AISEC/penlog"
 	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/pflag"
@@ -36,17 +36,12 @@ type compressor interface {
 }
 
 type converter struct {
-	timespec       string
-	compLen        int
-	typeLen        int
-	logFmt         string
-	jq             string
-	colors         bool
-	showLines      bool
-	showStacktrace bool
-	prioLevel      int
-	filters        []*filter
-	stdoutFilter   *filter
+	formatter    *penlog.HRFormatter
+	logFmt       string
+	logLevel     penlog.Prio
+	filters      []*filter
+	stdoutFilter *filter
+	jq           string
 
 	cleanedUp   bool
 	workers     int
@@ -103,28 +98,28 @@ func (c *converter) addFilterSpecs(specs []string) error {
 
 func (c *converter) addPrioFilter(spec string) error {
 	if val, err := strconv.ParseInt(spec, 10, 64); err == nil {
-		c.prioLevel = int(val)
+		c.logLevel = penlog.Prio(val)
 		return nil
 	}
 	switch strings.ToLower(spec) {
 	case "debug":
-		c.prioLevel = 7
+		c.logLevel = penlog.PrioDebug
 	case "info":
-		c.prioLevel = 6
+		c.logLevel = penlog.PrioInfo
 	case "notice":
-		c.prioLevel = 5
+		c.logLevel = penlog.PrioNotice
 	case "warning":
-		c.prioLevel = 4
+		c.logLevel = penlog.PrioWarning
 	case "error":
-		c.prioLevel = 3
+		c.logLevel = penlog.PrioError
 	case "critical":
-		c.prioLevel = 2
+		c.logLevel = penlog.PrioCritical
 	case "alert":
-		c.prioLevel = 1
+		c.logLevel = penlog.PrioAlert
 	case "emergency":
-		c.prioLevel = 0
+		c.logLevel = penlog.PrioEmergency
 	default:
-		return fmt.Errorf("invalid priolevel '%s'", spec)
+		return fmt.Errorf("invalid loglevel '%s'", spec)
 	}
 	return nil
 }
@@ -142,103 +137,6 @@ func (c *converter) initializeOutstreams() {
 	c.wg.Add(c.workers)
 }
 
-func (c *converter) transformLine(line map[string]interface{}) (string, error) {
-	var (
-		payload  string
-		priority penlog.Prio = penlog.PrioInfo // This prio is not colorized.
-	)
-
-	ts, err := castField(line, "timestamp")
-	if err != nil {
-		return "", err
-	}
-	comp, err := castField(line, "component")
-	if err != nil {
-		return "", err
-	}
-	msgType, err := castField(line, "type")
-	if err != nil {
-		return "", err
-	}
-	if prio, ok := line["priority"]; ok {
-		if p, ok := prio.(float64); ok {
-			priority = penlog.Prio(p)
-		}
-	}
-
-	// Type switch for the data field. We support string and a list
-	// of strings. The reflect stuff is a bit ugly, but it works... :)
-	switch v := line["data"].(type) {
-	case []interface{}:
-		d := make([]string, 0, len(v))
-		for _, val := range v {
-			s := val.(string)
-			d = append(d, s)
-		}
-		payload = strings.Join(d, " ")
-	case string:
-		payload = v
-	default:
-		return "", fmt.Errorf("unsupported data: %v", v)
-	}
-
-	fmtStr := "%s"
-	if c.colors {
-		switch priority {
-		case penlog.PrioEmergency,
-			penlog.PrioAlert,
-			penlog.PrioCritical,
-			penlog.PrioError:
-			fmtStr = colorize(colorBold, colorize(colorRed, "%s"))
-		case penlog.PrioWarning:
-			fmtStr = colorize(colorBold, colorize(colorYellow, "%s"))
-		case penlog.PrioNotice:
-			fmtStr = colorize(colorBold, "%s")
-		case penlog.PrioInfo:
-		case penlog.PrioDebug:
-			fmtStr = colorize(colorGray, "%s")
-		}
-
-		if comp == "JSON" && msgType == "ERROR" {
-			fmtStr = colorize(colorRed, "%s")
-		}
-	}
-	payload = fmt.Sprintf(fmtStr, payload)
-	if c.showLines {
-		if line, ok := line["line"]; ok {
-			if c.colors {
-				fmtStr += " " + colorize(colorBlue, "(%s)")
-			} else {
-				fmtStr += " " + "(%s)"
-			}
-			payload = fmt.Sprintf(fmtStr, payload, line)
-		}
-	}
-	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)
-	if err != nil {
-		return "", err
-	}
-
-	ts = tsParsed.Format(c.timespec)
-	comp = padOrTruncate(comp, c.compLen)
-	msgType = padOrTruncate(msgType, c.typeLen)
-	out := fmt.Sprintf(c.logFmt, ts, comp, msgType, payload)
-
-	if c.showStacktrace {
-		if rawVal, ok := line["stacktrace"]; ok {
-			if val, ok := rawVal.(string); ok {
-				out += "\n"
-				for _, line := range strings.Split(val, "\n") {
-					out += "  |"
-					out += line
-					out += "\n"
-				}
-			}
-		}
-	}
-	return out, nil
-}
-
 func fPrintError(w io.Writer, msg string) {
 	line := createErrorRecord(msg)
 	str, _ := json.Marshal(line)
@@ -247,7 +145,7 @@ func fPrintError(w io.Writer, msg string) {
 
 func (c *converter) printError(msg string) {
 	line := createErrorRecord(msg)
-	str, _ := c.transformLine(line)
+	str, _ := c.formatter.Format(line)
 	fmt.Println(str)
 }
 
@@ -314,12 +212,12 @@ func (c *converter) transform(r io.Reader) {
 			}
 			if prio, ok := d["priority"]; ok {
 				if p, ok := prio.(float64); ok {
-					if int(p) > c.prioLevel {
+					if penlog.Prio(p) > c.logLevel {
 						continue
 					}
 				}
 			}
-			if hrLine, err := c.transformLine(d); err == nil {
+			if hrLine, err := c.formatter.Format(d); err == nil {
 				fmt.Println(hrLine)
 			} else {
 				if errors.Is(err, errInvalidData) {
@@ -414,11 +312,14 @@ func createJQ(r io.Reader, filter string) (*bufio.Scanner, *exec.Cmd, error) {
 
 func main() {
 	var (
-		err          error
-		filterSpecs  []string
-		prioLevelRaw string
-		colorsCli    bool
-		conv         = converter{
+		err           error
+		filterSpecs   []string
+		prioLevelRaw  string
+		colorsCli     bool
+		linesCli      bool
+		stacktraceCli bool
+		conv          = converter{
+			formatter:   penlog.NewHRFormatter(),
 			workers:     0,
 			broadcastCh: make(chan map[string]interface{}),
 			cleanedUp:   false,
@@ -426,12 +327,12 @@ func main() {
 	)
 
 	pflag.BoolVar(&colorsCli, "colors", true, "enable colorized output based on priorities")
-	pflag.BoolVar(&conv.showLines, "lines", true, "show line numbers if available")
-	pflag.BoolVar(&conv.showStacktrace, "stacktrace", true, "show stacktrace if available")
-	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
+	pflag.BoolVar(&linesCli, "lines", true, "show line numbers if available")
+	pflag.BoolVar(&stacktraceCli, "stacktrace", true, "show stacktrace if available")
 	pflag.StringVarP(&conv.jq, "jq", "j", "", "run the jq tool as a preprocessor")
-	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
-	pflag.IntVarP(&conv.typeLen, "typelen", "t", 8, "len of type field")
+	pflag.IntVarP(&conv.formatter.CompLen, "complen", "c", 8, "len of component field")
+	pflag.IntVarP(&conv.formatter.TypeLen, "typelen", "t", 8, "len of type field")
+	pflag.BoolVar(&conv.formatter.TinyFormat, "tiny", false, "use penlog hr-tiny format")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
@@ -442,23 +343,23 @@ func main() {
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
-			colorEprintf(colorRed, conv.colors, "could not create CPU profile: %s\n", err)
+			colorEprintf(colorRed, conv.formatter.ShowColors, "could not create CPU profile: %s\n", err)
 			os.Exit(1)
 		}
 		defer f.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
-			colorEprintf(colorRed, conv.colors, "could not start CPU profile: %s\n", err)
+			colorEprintf(colorRed, conv.formatter.ShowColors, "could not start CPU profile: %s\n", err)
 			os.Exit(1)
 		}
 		defer pprof.StopCPUProfile()
 	}
 
 	if err := conv.addFilterSpecs(filterSpecs); err != nil {
-		colorEprintf(colorRed, conv.colors, "error: %s\n", err)
+		colorEprintf(colorRed, conv.formatter.ShowColors, "error: %s\n", err)
 		os.Exit(1)
 	}
 	if err := conv.addPrioFilter(prioLevelRaw); err != nil {
-		colorEprintf(colorRed, conv.colors, "error: %s\n", err)
+		colorEprintf(colorRed, conv.formatter.ShowColors, "error: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -473,20 +374,23 @@ func main() {
 		os.Exit(1)
 	}()
 
-	conv.colors = colorsCli
+	conv.formatter.ShowColors = colorsCli
 	if colorsCli {
 		if !isatty(uintptr(syscall.Stdout)) {
-			conv.colors = false
+			conv.formatter.ShowColors = false
 		}
-		if valRaw, ok := os.LookupEnv("PENLOG_FORCE_COLORS"); ok {
-			if val, err := strconv.ParseBool(valRaw); val && err == nil {
-				conv.colors = colorsCli
-			}
+		if helpers.GetEnvBool("PENLOG_FORCE_COLORS") {
+			conv.formatter.ShowColors = colorsCli
 		}
 	}
 	if valRaw, ok := os.LookupEnv("PENLOG_SHOW_LINES"); ok {
 		if val, err := strconv.ParseBool(valRaw); val && err == nil {
-			conv.showLines = val
+			conv.formatter.ShowLines = val
+		}
+	}
+	if valRaw, ok := os.LookupEnv("PENLOG_SHOW_STACKTRACES"); ok {
+		if val, err := strconv.ParseBool(valRaw); val && err == nil {
+			conv.formatter.ShowStacktraces = val
 		}
 	}
 

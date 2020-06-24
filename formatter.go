@@ -50,27 +50,29 @@ func padOrTruncate(s string, maxLen int) string {
 }
 
 type HRFormatter struct {
-	Timespec       string
-	CompLen        int
-	TypeLen        int
-	LogFmt         string
-	LogLevel       Prio
-	ShowColors     bool
-	ShowLines      bool
-	ShowStacktrace bool
-	TinyFormat     bool
+	Timespec        string
+	CompLen         int
+	TypeLen         int
+	LogFmt          string
+	LogLevel        Prio
+	ShowColors      bool
+	ShowLines       bool
+	ShowStacktraces bool
+	ShowLevelPrefix bool
+	TinyFormat      bool
 }
 
 func NewHRFormatter() *HRFormatter {
 	return &HRFormatter{
-		Timespec:       time.StampMilli,
-		CompLen:        8,
-		TypeLen:        8,
-		LogLevel:       PrioDebug,
-		ShowColors:     false,
-		ShowLines:      true,
-		ShowStacktrace: true,
-		TinyFormat:     true,
+		Timespec:        time.StampMilli,
+		CompLen:         8,
+		TypeLen:         8,
+		LogLevel:        PrioDebug,
+		ShowColors:      false,
+		ShowLines:       true,
+		ShowStacktraces: true,
+		ShowLevelPrefix: false,
+		TinyFormat:      true,
 	}
 }
 
@@ -94,12 +96,38 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		return "", err
 	}
 	if prio, ok := msg["priority"]; ok {
-		if p, ok := prio.(Prio); ok {
+		switch p := prio.(type) {
+		case Prio:
 			priority = p
+		case int:
+			priority = Prio(p)
+		case float64:
+			priority = Prio(p)
 		}
 	}
 
 	fmtStr := "%s"
+	if f.ShowLevelPrefix {
+		switch priority {
+		case PrioEmergency,
+			PrioAlert,
+			PrioCritical:
+			fmtStr = "[!] %s"
+		case PrioError:
+			fmtStr = "[E] %s"
+		case PrioWarning:
+			fmtStr = "[W] %s"
+		case PrioNotice:
+			fmtStr = "[N] %s"
+		case PrioInfo:
+			fmtStr = "[i] %s"
+		case PrioDebug:
+			fmtStr = "[d] %s"
+		}
+		if comp == "JSON" && msgType == "ERROR" {
+			fmtStr = "[!] %s"
+		}
+	}
 	if f.ShowColors {
 		switch priority {
 		case PrioEmergency,
@@ -117,25 +145,6 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		}
 		if comp == "JSON" && msgType == "ERROR" {
 			fmtStr = Colorize(ColorRed, "%s")
-		}
-	} else {
-		switch priority {
-		case PrioEmergency,
-			PrioAlert,
-			PrioCritical,
-			PrioError:
-			fmtStr = "[!] %s"
-		case PrioWarning:
-			fmtStr = "[W] %s"
-		case PrioNotice:
-			fmtStr = "[N] %s"
-		case PrioInfo:
-			fmtStr = "[i] %s"
-		case PrioDebug:
-			fmtStr = "[d] %s"
-		}
-		if comp == "JSON" && msgType == "ERROR" {
-			fmtStr = "[!] %s"
 		}
 	}
 	payload = fmt.Sprintf(fmtStr, payload)
@@ -163,7 +172,7 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		msgType = padOrTruncate(msgType, f.TypeLen)
 		out = fmt.Sprintf("%s {%s} [%s]: %s", ts, comp, msgType, payload)
 	}
-	if f.ShowStacktrace {
+	if f.ShowStacktraces {
 		if rawVal, ok := msg["stacktrace"]; ok {
 			if val, ok := rawVal.(string); ok {
 				out += "\n"
