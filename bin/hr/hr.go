@@ -42,6 +42,7 @@ type converter struct {
 	filters      []*filter
 	stdoutFilter *filter
 	jq           string
+	id           string
 
 	cleanedUp   bool
 	workers     int
@@ -217,6 +218,13 @@ func (c *converter) transform(r io.Reader) {
 					}
 				}
 			}
+			if idRaw, ok := d["id"]; ok && c.id != "" {
+				if id, ok := idRaw.(string); ok {
+					if id != c.id {
+						continue
+					}
+				}
+			}
 			if hrLine, err := c.formatter.Format(d); err == nil {
 				fmt.Println(hrLine)
 			} else {
@@ -326,10 +334,12 @@ func main() {
 		}
 	)
 
-	pflag.BoolVar(&colorsCli, "colors", true, "enable colorized output based on priorities")
-	pflag.BoolVar(&linesCli, "lines", true, "show line numbers if available")
-	pflag.BoolVar(&stacktraceCli, "stacktrace", true, "show stacktrace if available")
+	pflag.BoolVar(&colorsCli, "show-colors", true, "enable colorized output based on priorities")
+	pflag.BoolVar(&linesCli, "show-lines", true, "show line numbers if available")
+	pflag.BoolVar(&stacktraceCli, "show-stacktraces", true, "show stacktrace if available")
+	pflag.BoolVar(&conv.formatter.ShowID, "show-ids", false, "show unique message id")
 	pflag.StringVarP(&conv.jq, "jq", "j", "", "run the jq tool as a preprocessor")
+	pflag.StringVarP(&conv.id, "id", "i", "", "only show this particular message")
 	pflag.IntVarP(&conv.formatter.CompLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.formatter.TypeLen, "typelen", "t", 8, "len of type field")
 	pflag.BoolVar(&conv.formatter.TinyFormat, "tiny", false, "use penlog hr-tiny format")
@@ -383,11 +393,13 @@ func main() {
 			conv.formatter.ShowColors = colorsCli
 		}
 	}
+	conv.formatter.ShowLines = linesCli
 	if valRaw, ok := os.LookupEnv("PENLOG_SHOW_LINES"); ok {
 		if val, err := strconv.ParseBool(valRaw); val && err == nil {
 			conv.formatter.ShowLines = val
 		}
 	}
+	conv.formatter.ShowStacktraces = stacktraceCli
 	if valRaw, ok := os.LookupEnv("PENLOG_SHOW_STACKTRACES"); ok {
 		if val, err := strconv.ParseBool(valRaw); val && err == nil {
 			conv.formatter.ShowStacktraces = val

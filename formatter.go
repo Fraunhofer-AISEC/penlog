@@ -59,6 +59,7 @@ type HRFormatter struct {
 	ShowLines       bool
 	ShowStacktraces bool
 	ShowLevelPrefix bool
+	ShowID          bool
 	TinyFormat      bool
 }
 
@@ -171,6 +172,15 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		comp = padOrTruncate(comp, f.CompLen)
 		msgType = padOrTruncate(msgType, f.TypeLen)
 		out = fmt.Sprintf("%s {%s} [%s]: %s", ts, comp, msgType, payload)
+	}
+	if f.ShowID {
+		if rawVal, ok := msg["id"]; ok {
+			if val, ok := rawVal.(string); ok {
+				out += "\n"
+				out += "  => "
+				out += val
+			}
+		}
 	}
 	if f.ShowStacktraces {
 		if rawVal, ok := msg["stacktrace"]; ok {
