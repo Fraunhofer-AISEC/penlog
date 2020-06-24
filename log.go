@@ -18,6 +18,7 @@ import (
 
 	"git.sr.ht/~rumpelsepp/helpers"
 	"github.com/coreos/go-systemd/v22/journal"
+	"github.com/google/uuid"
 )
 
 type Prio int
@@ -263,7 +264,11 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 			}
 		}
 	}
-	now := time.Now()
+	var (
+		now = time.Now()
+		id  = uuid.New()
+	)
+	msg["id"] = id.String()
 	msg["timestamp"] = now.Format(l.timespec)
 	msg["timezone"] = now.Format("-0700")
 	msg["component"] = l.component
