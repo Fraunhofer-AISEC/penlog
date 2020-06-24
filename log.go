@@ -133,10 +133,15 @@ func NewLogger(component string, w io.Writer) *Logger {
 func (l *Logger) SetOutputType(t OutType) {
 	l.mu.Lock()
 	l.outputType = t
-	if t == OutTypeHR {
+	switch t {
+	case OutTypeHR:
 		l.hrFormatter.TinyFormat = false
-	} else if t == OutTypeHRTiny {
+	case OutTypeHRTiny:
 		l.hrFormatter.TinyFormat = true
+	case OutTypeSystemdJournal:
+		if !journal.Enabled() {
+			panic("systemd-journal is not available")
+		}
 	}
 	l.mu.Unlock()
 }
