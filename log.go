@@ -119,10 +119,28 @@ func NewLogger(component string, w io.Writer) *Logger {
 		}
 	}
 
+	loglevel := PrioDebug
+	if rawVal, ok := os.LookupEnv("PENLOG_LOGLEVEL"); ok {
+		switch strings.ToLower(rawVal) {
+		case "critical":
+			loglevel = PrioCritical
+		case "error":
+			loglevel = PrioError
+		case "warning":
+			loglevel = PrioWarning
+		case "notice":
+			loglevel = PrioNotice
+		case "info":
+			loglevel = PrioInfo
+		case "debug":
+			loglevel = PrioDebug
+		}
+	}
+
 	return &Logger{
 		hrFormatter: hrFormatter,
 		host:        hostname,
-		loglevel:    PrioDebug,
+		loglevel:    loglevel,
 		component:   component,
 		timespec:    "2006-01-02T15:04:05.000000",
 		lines:       getEnvBool("PENLOG_CAPTURE_LINES"),
