@@ -144,7 +144,7 @@ func (c *converter) initializeOutstreams() {
 func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 	var (
 		payload  string
-		priority int = penlog.PrioInfo // This prio is not colorized.
+		priority penlog.Prio = penlog.PrioInfo // This prio is not colorized.
 	)
 
 	ts, err := castField(line, "timestamp")
@@ -161,7 +161,7 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 	}
 	if prio, ok := line["priority"]; ok {
 		if p, ok := prio.(float64); ok {
-			priority = int(p)
+			priority = penlog.Prio(p)
 		}
 	}
 

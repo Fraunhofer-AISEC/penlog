@@ -9,34 +9,22 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/coreos/go-systemd/v22/journal"
 )
 
-type Logger struct {
-	host       string
-	component  string
-	timespec   string
-	writer     io.Writer
-	buf        bytes.Buffer
-	mu         sync.Mutex
-	lines      bool
-	stacktrace bool
-}
-
-const (
-	msgTypeRead     = "read"
-	msgTypeWrite    = "write"
-	msgTypeMessage  = "message"
-	msgTypePreamble = "preamble"
-)
+type Prio int
 
 // RFC5424 Section 6.2.1
 const (
-	PrioEmergency = iota
+	PrioEmergency Prio = iota
 	PrioAlert
 	PrioCritical
 	PrioError
@@ -46,6 +34,25 @@ const (
 	PrioDebug
 )
 
+type Logger struct {
+	host           string
+	component      string
+	timespec       string
+	writer         io.Writer
+	buf            bytes.Buffer
+	mu             sync.Mutex
+	lines          bool
+	stacktrace     bool
+	systemdJournal bool
+}
+
+const (
+	msgTypeRead     = "read"
+	msgTypeWrite    = "write"
+	msgTypeMessage  = "message"
+	msgTypePreamble = "preamble"
+)
+
 func getLineNumber(depth int) string {
 	if _, file, line, ok := runtime.Caller(depth); ok {
 		return fmt.Sprintf("%s:%d", file, line)
@@ -53,11 +60,26 @@ func getLineNumber(depth int) string {
 	return ""
 }
 
+func getEnvBool(name string) bool {
+	if rawVal, ok := os.LookupEnv(name); ok {
+		if val, err := strconv.ParseBool(rawVal); val && err == nil {
+			return val
+		}
+	}
+	return false
+}
+
 func NewLogger(component string, w io.Writer) *Logger {
 	var (
-		lines      = false
-		stacktrace = false
+		lines          = getEnvBool("PENLOG_LINES")
+		stacktrace     = getEnvBool("PENLOG_STACKTRACE")
+		systemdJournal = getEnvBool("PENLOG_SYSTEMD_JOURNAL")
 	)
+
+	if systemdJournal && !journal.Enabled() {
+		panic("systemd-journal is not available")
+	}
+
 	hostname, err := os.Hostname()
 	// This should not happen!
 	if err != nil {
@@ -70,24 +92,15 @@ func NewLogger(component string, w io.Writer) *Logger {
 			component = "root"
 		}
 	}
-	if rawVal, ok := os.LookupEnv("PENLOG_LINES"); ok {
-		if val, err := strconv.ParseBool(rawVal); val && err == nil {
-			lines = true
-		}
-	}
-	if rawVal, ok := os.LookupEnv("PENLOG_STACKTRACE"); ok {
-		if val, err := strconv.ParseBool(rawVal); val && err == nil {
-			stacktrace = true
-		}
-	}
 
 	return &Logger{
-		host:       hostname,
-		component:  component,
-		timespec:   "2006-01-02T15:04:05.000000",
-		lines:      lines,
-		stacktrace: stacktrace,
-		writer:     w,
+		host:           hostname,
+		component:      component,
+		timespec:       "2006-01-02T15:04:05.000000",
+		lines:          lines,
+		stacktrace:     stacktrace,
+		systemdJournal: systemdJournal,
+		writer:         w,
 	}
 }
 
@@ -95,6 +108,64 @@ func (l *Logger) EnableLines(enable bool) {
 	l.mu.Lock()
 	l.lines = enable
 	l.mu.Unlock()
+}
+
+func convertVarsForJournal(in map[string]interface{}) map[string]string {
+	// penlog fields are converted to strings suitable for systemd journal
+	var (
+		out = make(map[string]string)
+		re  = regexp.MustCompile(`(.+):([0-9]+)$`)
+	)
+
+	if rawVal, ok := in["component"]; ok {
+		if val, ok := rawVal.(string); ok {
+			out["COMPONENT"] = val
+		}
+	}
+	if rawVal, ok := in["line"]; ok {
+		if val, ok := rawVal.(string); ok {
+			m := re.FindStringSubmatch(val)
+			if m != nil {
+				out["CODE_FILE"] = m[1]
+				out["CODE_LINE"] = m[2]
+			}
+		}
+	}
+	if rawVal, ok := in["stacktrace"]; ok {
+		if val, ok := rawVal.(string); ok {
+			out["STACKTRACE"] = val
+		}
+	}
+	if rawVal, ok := in["tags"]; ok {
+		if val, ok := rawVal.([]string); ok {
+			out["TAGS"] = strings.Join(val, ", ")
+		}
+	}
+	return out
+}
+
+func (l *Logger) outputJournal(msg map[string]interface{}) {
+	var (
+		data string
+		prio = -1
+		vars = convertVarsForJournal(msg)
+	)
+	if rawVal, ok := msg["priority"]; ok {
+		if val, ok := rawVal.(int); ok {
+			prio = val
+		}
+	}
+	if prio == -1 {
+		prio = int(PrioInfo)
+	}
+	if rawData, ok := msg["data"]; ok {
+		if val, ok := rawData.(string); ok {
+			data = val
+		}
+	}
+	if err := journal.Send(data, journal.Priority(prio), vars); err != nil {
+		panic(err)
+	}
 }
 
 func (l *Logger) output(msg map[string]interface{}, depth int) {
@@ -109,6 +180,11 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 	}
 	if l.stacktrace {
 		msg["stacktrace"] = string(debug.Stack())
+	}
+
+	if l.systemdJournal {
+		l.outputJournal(msg)
+		return
 	}
 
 	b, err := json.Marshal(msg)
@@ -126,7 +202,7 @@ func (l *Logger) Log(msg map[string]interface{}) {
 	l.output(msg, 3)
 }
 
-func (l *Logger) LogMessage(msgType string, prio int, tags []string, v ...interface{}) {
+func (l *Logger) LogMessage(msgType string, prio Prio, tags []string, v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprint(v...),
 		"type":     msgType,
@@ -136,7 +212,7 @@ func (l *Logger) LogMessage(msgType string, prio int, tags []string, v ...interf
 	l.output(msg, 3)
 }
 
-func (l *Logger) LogMessagef(msgType string, prio int, tags []string, format string, v ...interface{}) {
+func (l *Logger) LogMessagef(msgType string, prio Prio, tags []string, format string, v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprintf(format, v...),
 		"type":     msgType,
@@ -146,7 +222,7 @@ func (l *Logger) LogMessagef(msgType string, prio int, tags []string, format str
 	l.output(msg, 3)
 }
 
-func (l *Logger) logMessage(msgType string, prio int, tags []string, v ...interface{}) {
+func (l *Logger) logMessage(msgType string, prio Prio, tags []string, v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprint(v...),
 		"type":     msgType,
@@ -156,7 +232,7 @@ func (l *Logger) logMessage(msgType string, prio int, tags []string, v ...interf
 	l.output(msg, 4)
 }
 
-func (l *Logger) logMessagef(msgType string, prio int, tags []string, format string, v ...interface{}) {
+func (l *Logger) logMessagef(msgType string, prio Prio, tags []string, format string, v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprintf(format, v...),
 		"type":     msgType,
