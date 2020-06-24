@@ -107,9 +107,27 @@ func NewLogger(component string, w io.Writer) *Logger {
 	}
 }
 
-func (l *Logger) EnableLines(enable bool) {
+func (l *Logger) SetLines(enable bool) {
 	l.mu.Lock()
 	l.lines = enable
+	l.mu.Unlock()
+}
+
+func (l *Logger) SetStacktrace(enable bool) {
+	l.mu.Lock()
+	l.stacktrace = enable
+	l.mu.Unlock()
+}
+
+func (l *Logger) SetHR(enable bool) {
+	l.mu.Lock()
+	l.formatHR = enable
+	l.mu.Unlock()
+}
+
+func (l *Logger) SetHRTiny(enable bool) {
+	l.mu.Lock()
+	l.HRFormatter.TinyFormat = enable
 	l.mu.Unlock()
 }
 
@@ -117,12 +135,6 @@ func (l *Logger) SetLogLevel(prio Prio) {
 	l.mu.Lock()
 	l.loglevel = prio
 	l.mu.Unlock()
-}
-
-func (l *Logger) GetLogLevel(prio Prio) Prio {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.loglevel
 }
 
 func convertVarsForJournal(in map[string]interface{}) map[string]string {

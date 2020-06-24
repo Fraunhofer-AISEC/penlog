@@ -56,6 +56,7 @@ type HRFormatter struct {
 	ShowColors     bool
 	ShowLines      bool
 	ShowStacktrace bool
+	TinyFormat     bool
 }
 
 func NewHRFormatter() *HRFormatter {
@@ -63,11 +64,11 @@ func NewHRFormatter() *HRFormatter {
 		Timespec:       time.StampMilli,
 		CompLen:        8,
 		TypeLen:        8,
-		LogFmt:         "%s {%s} [%s]: %s",
 		LogLevel:       PrioDebug,
 		ShowColors:     true,
 		ShowLines:      true,
 		ShowStacktrace: true,
+		TinyFormat:     getEnvBool("PENLOG_HR_TINY"),
 	}
 }
 
@@ -134,10 +135,14 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 	}
 
 	ts = tsParsed.Format(f.Timespec)
-	comp = padOrTruncate(comp, f.CompLen)
-	msgType = padOrTruncate(msgType, f.TypeLen)
-	out := fmt.Sprintf(f.LogFmt, ts, comp, msgType, payload)
-
+	var out string
+	if f.TinyFormat {
+		out = fmt.Sprintf("%s: %s", ts, payload)
+	} else {
+		comp = padOrTruncate(comp, f.CompLen)
+		msgType = padOrTruncate(msgType, f.TypeLen)
+		out = fmt.Sprintf("%s {%s} [%s]: %s", ts, comp, msgType, payload)
+	}
 	if f.ShowStacktrace {
 		if rawVal, ok := msg["stacktrace"]; ok {
 			if val, ok := rawVal.(string); ok {
