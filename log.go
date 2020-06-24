@@ -317,6 +317,11 @@ func (l *Logger) logMessagef(msgType string, prio Prio, tags []string, format st
 	l.output(msg, 4)
 }
 
+func (l *Logger) Write(p []byte) (int, error) {
+	l.logMessage(msgTypeMessage, PrioInfo, nil, string(p))
+	return len(p), nil
+}
+
 func (l *Logger) LogPreamble(v ...interface{}) {
 	l.logMessage(msgTypePreamble, PrioNotice, nil, v...)
 }
