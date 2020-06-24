@@ -53,9 +53,9 @@ class Logger:
         msg["component"] = self.component
         msg["host"] = self.host
         msg["timestamp"] = datetime.now().isoformat()
-        if os.environ.get("PENLOG_LINES"):
+        if os.environ.get("PENLOG_CAPTURE_LINES"):
             msg["line"] = _get_line_number(depth)
-        if os.environ.get("PENLOG_STACKTRACE"):
+        if os.environ.get("PENLOG_CAPTURE_STACKTRACES"):
             msg["stacktrace"] = ''.join(traceback.format_stack())
         print(json.dumps(msg), file=self.file, flush=self.flush)
 
@@ -107,6 +107,9 @@ class Logger:
     def log_error(self, data: str, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.ERROR, tags)
 
+    def log_critical(self, data: str, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.MESSAGE, MessagePrio.CRITICAL, tags)
+
     def log_summary(self, data: str, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE, tags)
 
@@ -117,9 +120,9 @@ def _log(msg: Dict, depth: int) -> None:
     msg["component"] = "root"
     msg["host"] = socket.gethostname()
     msg["timestamp"] = datetime.now().isoformat()
-    if os.environ.get("PENLOG_LINES"):
+    if os.environ.get("PENLOG_CAPTURE_LINES"):
         msg["line"] = _get_line_number(depth)
-    if os.environ.get("PENLOG_STACKTRACE"):
+    if os.environ.get("PENLOG_CAPTURE_STACKTRACES"):
         msg["stacktrace"] = ''.join(traceback.format_stack())
     print(json.dumps(msg), file=sys.stderr, flush=True)
 
@@ -180,6 +183,10 @@ def log_warning(data: str, tags: Optional[List[str]] = None) -> None:
 
 def log_error(data: str, tags: Optional[List[str]] = None) -> None:
     _log_msg(data, MessageType.MESSAGE, MessagePrio.ERROR, tags)
+
+
+def log_critical(data: str, tags: Optional[List[str]] = None) -> None:
+    _log_msg(data, MessageType.MESSAGE, MessagePrio.CRITICAL, tags)
 
 
 def log_summary(data: str, tags: Optional[List[str]] = None) -> None:
