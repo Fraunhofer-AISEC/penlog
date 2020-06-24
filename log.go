@@ -44,6 +44,7 @@ type Logger struct {
 	lines          bool
 	stacktrace     bool
 	systemdJournal bool
+	jsonStderr     bool
 	loglevel       Prio
 }
 
@@ -102,6 +103,7 @@ func NewLogger(component string, w io.Writer) *Logger {
 		lines:          lines,
 		stacktrace:     stacktrace,
 		systemdJournal: systemdJournal,
+		jsonStderr:     true,
 		writer:         w,
 	}
 }
@@ -207,16 +209,19 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 		l.outputJournal(msg)
 		return
 	}
+	if l.jsonStderr {
+		b, err := json.Marshal(msg)
+		if err != nil {
+			// This is clearly a bug!
+			panic(err)
+		}
 
-	b, err := json.Marshal(msg)
-	if err != nil {
-		// This is clearly a bug!
-		panic(err)
+		l.buf.Write(b)
+		l.buf.WriteString("\n")
+		l.buf.WriteTo(l.writer)
+	} else {
+		panic("hr output is not yet implemented")
 	}
-
-	l.buf.Write(b)
-	l.buf.WriteString("\n")
-	l.buf.WriteTo(l.writer)
 }
 
 func (l *Logger) Log(msg map[string]interface{}) {
