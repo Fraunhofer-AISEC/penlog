@@ -46,7 +46,7 @@ type Logger struct {
 	lines          bool
 	stacktrace     bool
 	systemdJournal bool
-	jsonStderr     bool
+	formatHR       bool
 	loglevel       Prio
 }
 
@@ -102,7 +102,7 @@ func NewLogger(component string, w io.Writer) *Logger {
 		lines:          getEnvBool("PENLOG_LINES"),
 		stacktrace:     getEnvBool("PENLOG_STACKTRACE"),
 		systemdJournal: systemdJournal,
-		jsonStderr:     getEnvBool("PENLOG_HR"),
+		formatHR:       getEnvBool("PENLOG_HR"),
 		writer:         w,
 	}
 }
@@ -183,7 +183,7 @@ func (l *Logger) outputJournal(msg map[string]interface{}) {
 	}
 }
 
-func (l *Logger) outputHr(msg map[string]interface{}) {
+func (l *Logger) outputHR(msg map[string]interface{}) {
 	line, err := l.HRFormatter.Format(msg)
 	if err != nil {
 		panic(err)
@@ -216,7 +216,9 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 		l.outputJournal(msg)
 		return
 	}
-	if l.jsonStderr {
+	if l.formatHR {
+		l.outputHR(msg)
+	} else {
 		b, err := json.Marshal(msg)
 		if err != nil {
 			// This is clearly a bug!
@@ -226,8 +228,6 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 		l.buf.Write(b)
 		l.buf.WriteString("\n")
 		l.buf.WriteTo(l.writer)
-	} else {
-		panic("hr output is not yet implemented")
 	}
 }
 
