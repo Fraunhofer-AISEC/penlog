@@ -123,8 +123,8 @@ func NewLogger(component string, w io.Writer) *Logger {
 		loglevel:    PrioDebug,
 		component:   component,
 		timespec:    "2006-01-02T15:04:05.000000",
-		lines:       getEnvBool("PENLOG_LINES"),
-		stacktrace:  getEnvBool("PENLOG_STACKTRACE"),
+		lines:       getEnvBool("PENLOG_CAPTURE_LINES"),
+		stacktrace:  getEnvBool("PENLOG_CAPTURE_STACKTRACES"),
 		outputType:  outputType,
 		writer:      w,
 	}
@@ -137,6 +137,14 @@ func (l *Logger) SetOutputType(t OutType) {
 		l.hrFormatter.TinyFormat = false
 	} else if t == OutTypeHRTiny {
 		l.hrFormatter.TinyFormat = true
+	}
+	l.mu.Unlock()
+}
+
+func (l *Logger) SetColors(enable bool) {
+	l.mu.Lock()
+	if l.hrFormatter != nil {
+		l.hrFormatter.ShowColors = enable
 	}
 	l.mu.Unlock()
 }
@@ -317,21 +325,30 @@ func (l *Logger) LogPreamblef(format string, v ...interface{}) {
 	l.logMessagef(msgTypePreamble, PrioNotice, nil, format, v...)
 }
 
-func (l *Logger) LogRead(handle string, v ...interface{}) {
+func (l *Logger) LogRead(v ...interface{}) {
 	l.logMessage(msgTypeRead, PrioDebug, nil, v...)
 }
 
-func (l *Logger) LogReadf(handle, format string, v ...interface{}) {
+func (l *Logger) LogReadf(format string, v ...interface{}) {
 	l.logMessagef(msgTypeRead, PrioDebug, nil, format, v...)
 }
 
-func (l *Logger) LogWrite(handle string, v ...interface{}) {
+func (l *Logger) LogWrite(v ...interface{}) {
 	l.logMessage(msgTypeWrite, PrioDebug, nil, v...)
 }
 
-func (l *Logger) LogWritef(handle, format string, v ...interface{}) {
+func (l *Logger) LogWritef(format string, v ...interface{}) {
 	l.logMessagef(msgTypeWrite, PrioDebug, nil, format, v...)
 }
+
+func (l *Logger) LogCritical(v ...interface{}) {
+	l.logMessage(msgTypeMessage, PrioCritical, nil, v...)
+}
+
+func (l *Logger) LogCriticalf(format string, v ...interface{}) {
+	l.logMessagef(msgTypeMessage, PrioCritical, nil, format, v...)
+}
+
 func (l *Logger) LogError(v ...interface{}) {
 	l.logMessage(msgTypeMessage, PrioError, nil, v...)
 }
@@ -370,6 +387,30 @@ func (l *Logger) LogDebug(v ...interface{}) {
 
 func (l *Logger) LogDebugf(format string, v ...interface{}) {
 	l.logMessagef(msgTypeMessage, PrioDebug, nil, format, v...)
+}
+
+func (l *Logger) LogReadTagged(tags []string, v ...interface{}) {
+	l.logMessage(msgTypeRead, PrioDebug, tags, v...)
+}
+
+func (l *Logger) LogReadfTagged(tags []string, format string, v ...interface{}) {
+	l.logMessagef(msgTypeRead, PrioDebug, tags, format, v...)
+}
+
+func (l *Logger) LogWriteTagged(tags []string, v ...interface{}) {
+	l.logMessage(msgTypeWrite, PrioDebug, tags, v...)
+}
+
+func (l *Logger) LogWritefTagged(tags []string, format string, v ...interface{}) {
+	l.logMessagef(msgTypeWrite, PrioDebug, tags, format, v...)
+}
+
+func (l *Logger) LogCriticalTagged(tags []string, v ...interface{}) {
+	l.logMessage(msgTypeMessage, PrioCritical, tags, v...)
+}
+
+func (l *Logger) LogCriticalTaggedf(tags []string, format string, v ...interface{}) {
+	l.logMessagef(msgTypeMessage, PrioCritical, tags, format, v...)
 }
 
 func (l *Logger) LogErrorTagged(tags []string, v ...interface{}) {

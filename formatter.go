@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package penlog
 
 import (
@@ -65,10 +67,10 @@ func NewHRFormatter() *HRFormatter {
 		CompLen:        8,
 		TypeLen:        8,
 		LogLevel:       PrioDebug,
-		ShowColors:     true,
+		ShowColors:     false,
 		ShowLines:      true,
 		ShowStacktrace: true,
-		TinyFormat:     false,
+		TinyFormat:     true,
 	}
 }
 
