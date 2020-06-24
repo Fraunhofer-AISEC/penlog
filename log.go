@@ -34,21 +34,14 @@ const (
 	PrioDebug
 )
 
-type Logger struct {
-	HRFormatter *HRFormatter
+type OutType int
 
-	host           string
-	component      string
-	timespec       string
-	writer         io.Writer
-	buf            bytes.Buffer
-	mu             sync.Mutex
-	lines          bool
-	stacktrace     bool
-	systemdJournal bool
-	formatHR       bool
-	loglevel       Prio
-}
+const (
+	OutTypeHR OutType = iota
+	OutTypeHRTiny
+	OutTypeJSON
+	OutTypeSystemdJournal
+)
 
 const (
 	msgTypeRead     = "read"
@@ -73,10 +66,41 @@ func getEnvBool(name string) bool {
 	return false
 }
 
-func NewLogger(component string, w io.Writer) *Logger {
-	systemdJournal := getEnvBool("PENLOG_SYSTEMD_JOURNAL")
+type Logger struct {
+	hrFormatter *HRFormatter
+	host        string
+	component   string
+	timespec    string
+	writer      io.Writer
+	buf         bytes.Buffer
+	mu          sync.Mutex
+	lines       bool
+	stacktrace  bool
+	loglevel    Prio
+	outputType  OutType
+}
 
-	if systemdJournal && !journal.Enabled() {
+func NewLogger(component string, w io.Writer) *Logger {
+	var (
+		outputType  OutType
+		hrFormatter = NewHRFormatter()
+	)
+	switch strings.ToLower(os.Getenv("PENLOG_OUTPUT")) {
+	case "hr":
+		outputType = OutTypeHR
+		hrFormatter.TinyFormat = false
+	case "hr-tiny":
+		outputType = OutTypeHRTiny
+		hrFormatter.TinyFormat = true
+	case "json":
+		outputType = OutTypeJSON
+	case "systemd":
+		outputType = OutTypeSystemdJournal
+	default:
+		outputType = OutTypeHRTiny
+		hrFormatter.TinyFormat = true
+	}
+	if outputType == OutTypeSystemdJournal && !journal.Enabled() {
 		panic("systemd-journal is not available")
 	}
 
@@ -94,17 +118,27 @@ func NewLogger(component string, w io.Writer) *Logger {
 	}
 
 	return &Logger{
-		HRFormatter:    NewHRFormatter(),
-		host:           hostname,
-		loglevel:       PrioDebug,
-		component:      component,
-		timespec:       "2006-01-02T15:04:05.000000",
-		lines:          getEnvBool("PENLOG_LINES"),
-		stacktrace:     getEnvBool("PENLOG_STACKTRACE"),
-		systemdJournal: systemdJournal,
-		formatHR:       getEnvBool("PENLOG_HR"),
-		writer:         w,
+		hrFormatter: hrFormatter,
+		host:        hostname,
+		loglevel:    PrioDebug,
+		component:   component,
+		timespec:    "2006-01-02T15:04:05.000000",
+		lines:       getEnvBool("PENLOG_LINES"),
+		stacktrace:  getEnvBool("PENLOG_STACKTRACE"),
+		outputType:  outputType,
+		writer:      w,
 	}
+}
+
+func (l *Logger) SetOutputType(t OutType) {
+	l.mu.Lock()
+	l.outputType = t
+	if t == OutTypeHR {
+		l.hrFormatter.TinyFormat = false
+	} else if t == OutTypeHRTiny {
+		l.hrFormatter.TinyFormat = true
+	}
+	l.mu.Unlock()
 }
 
 func (l *Logger) SetLines(enable bool) {
@@ -116,18 +150,6 @@ func (l *Logger) SetLines(enable bool) {
 func (l *Logger) SetStacktrace(enable bool) {
 	l.mu.Lock()
 	l.stacktrace = enable
-	l.mu.Unlock()
-}
-
-func (l *Logger) SetHR(enable bool) {
-	l.mu.Lock()
-	l.formatHR = enable
-	l.mu.Unlock()
-}
-
-func (l *Logger) SetHRTiny(enable bool) {
-	l.mu.Lock()
-	l.HRFormatter.TinyFormat = enable
 	l.mu.Unlock()
 }
 
@@ -178,8 +200,8 @@ func (l *Logger) outputJournal(msg map[string]interface{}) {
 		vars = convertVarsForJournal(msg)
 	)
 	if rawVal, ok := msg["priority"]; ok {
-		if val, ok := rawVal.(int); ok {
-			prio = val
+		if val, ok := rawVal.(Prio); ok {
+			prio = int(val)
 		}
 	}
 	if prio == -1 {
@@ -196,11 +218,11 @@ func (l *Logger) outputJournal(msg map[string]interface{}) {
 }
 
 func (l *Logger) outputHR(msg map[string]interface{}) {
-	line, err := l.HRFormatter.Format(msg)
+	line, err := l.hrFormatter.Format(msg)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Fprintf(os.Stderr, "%s\n", line)
+	fmt.Fprintf(l.writer, "%s\n", line)
 }
 
 func (l *Logger) output(msg map[string]interface{}, depth int) {
@@ -213,7 +235,6 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 			}
 		}
 	}
-
 	msg["timestamp"] = time.Now().Format(l.timespec)
 	msg["component"] = l.component
 	msg["host"] = l.host
@@ -224,22 +245,23 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 		msg["stacktrace"] = string(debug.Stack())
 	}
 
-	if l.systemdJournal {
-		l.outputJournal(msg)
-		return
-	}
-	if l.formatHR {
+	switch l.outputType {
+	// hr and hr-tiny are set in the formatter
+	case OutTypeHR, OutTypeHRTiny:
 		l.outputHR(msg)
-	} else {
+	case OutTypeJSON:
 		b, err := json.Marshal(msg)
 		if err != nil {
 			// This is clearly a bug!
 			panic(err)
 		}
-
 		l.buf.Write(b)
 		l.buf.WriteString("\n")
 		l.buf.WriteTo(l.writer)
+	case OutTypeSystemdJournal:
+		l.outputJournal(msg)
+	default:
+		panic("BUG: impossible output type")
 	}
 }
 

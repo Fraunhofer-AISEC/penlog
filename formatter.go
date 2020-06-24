@@ -68,7 +68,7 @@ func NewHRFormatter() *HRFormatter {
 		ShowColors:     true,
 		ShowLines:      true,
 		ShowStacktrace: true,
-		TinyFormat:     getEnvBool("PENLOG_HR_TINY"),
+		TinyFormat:     false,
 	}
 }
 
@@ -92,8 +92,8 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		return "", err
 	}
 	if prio, ok := msg["priority"]; ok {
-		if p, ok := prio.(float64); ok {
-			priority = Prio(p)
+		if p, ok := prio.(Prio); ok {
+			priority = p
 		}
 	}
 
@@ -113,9 +113,27 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		case PrioDebug:
 			fmtStr = Colorize(ColorGray, "%s")
 		}
-
 		if comp == "JSON" && msgType == "ERROR" {
 			fmtStr = Colorize(ColorRed, "%s")
+		}
+	} else {
+		switch priority {
+		case PrioEmergency,
+			PrioAlert,
+			PrioCritical,
+			PrioError:
+			fmtStr = "[!] %s"
+		case PrioWarning:
+			fmtStr = "[W] %s"
+		case PrioNotice:
+			fmtStr = "[N] %s"
+		case PrioInfo:
+			fmtStr = "[i] %s"
+		case PrioDebug:
+			fmtStr = "[d] %s"
+		}
+		if comp == "JSON" && msgType == "ERROR" {
+			fmtStr = "[!] %s"
 		}
 	}
 	payload = fmt.Sprintf(fmtStr, payload)
