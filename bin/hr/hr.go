@@ -36,16 +36,17 @@ type compressor interface {
 }
 
 type converter struct {
-	timespec     string
-	compLen      int
-	typeLen      int
-	logFmt       string
-	jq           string
-	colors       bool
-	showLines    bool
-	prioLevel    int
-	filters      []*filter
-	stdoutFilter *filter
+	timespec       string
+	compLen        int
+	typeLen        int
+	logFmt         string
+	jq             string
+	colors         bool
+	showLines      bool
+	showStacktrace bool
+	prioLevel      int
+	filters        []*filter
+	stdoutFilter   *filter
 
 	cleanedUp   bool
 	workers     int
@@ -213,7 +214,6 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 			payload = fmt.Sprintf(fmtStr, payload, line)
 		}
 	}
-
 	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)
 	if err != nil {
 		return "", err
@@ -222,7 +222,21 @@ func (c *converter) transformLine(line map[string]interface{}) (string, error) {
 	ts = tsParsed.Format(c.timespec)
 	comp = padOrTruncate(comp, c.compLen)
 	msgType = padOrTruncate(msgType, c.typeLen)
-	return fmt.Sprintf(c.logFmt, ts, comp, msgType, payload), nil
+	out := fmt.Sprintf(c.logFmt, ts, comp, msgType, payload)
+
+	if c.showStacktrace {
+		if rawVal, ok := line["stacktrace"]; ok {
+			if val, ok := rawVal.(string); ok {
+				out += "\n"
+				for _, line := range strings.Split(val, "\n") {
+					out += "  |"
+					out += line
+					out += "\n"
+				}
+			}
+		}
+	}
+	return out, nil
 }
 
 func fPrintError(w io.Writer, msg string) {
@@ -413,6 +427,7 @@ func main() {
 
 	pflag.BoolVar(&colorsCli, "colors", true, "enable colorized output based on priorities")
 	pflag.BoolVar(&conv.showLines, "lines", true, "show line numbers if available")
+	pflag.BoolVar(&conv.showStacktrace, "stacktrace", true, "show stacktrace if available")
 	pflag.StringVarP(&conv.timespec, "timespec", "s", time.StampMilli, "timespec in output")
 	pflag.StringVarP(&conv.jq, "jq", "j", "", "run the jq tool as a preprocessor")
 	pflag.IntVarP(&conv.compLen, "complen", "c", 8, "len of component field")
