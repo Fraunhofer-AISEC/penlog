@@ -35,6 +35,8 @@ const (
 )
 
 type Logger struct {
+	HRFormatter *HRFormatter
+
 	host           string
 	component      string
 	timespec       string
@@ -72,11 +74,7 @@ func getEnvBool(name string) bool {
 }
 
 func NewLogger(component string, w io.Writer) *Logger {
-	var (
-		lines          = getEnvBool("PENLOG_LINES")
-		stacktrace     = getEnvBool("PENLOG_STACKTRACE")
-		systemdJournal = getEnvBool("PENLOG_SYSTEMD_JOURNAL")
-	)
+	systemdJournal := getEnvBool("PENLOG_SYSTEMD_JOURNAL")
 
 	if systemdJournal && !journal.Enabled() {
 		panic("systemd-journal is not available")
@@ -96,14 +94,15 @@ func NewLogger(component string, w io.Writer) *Logger {
 	}
 
 	return &Logger{
+		HRFormatter:    NewHRFormatter(),
 		host:           hostname,
 		loglevel:       PrioDebug,
 		component:      component,
 		timespec:       "2006-01-02T15:04:05.000000",
-		lines:          lines,
-		stacktrace:     stacktrace,
+		lines:          getEnvBool("PENLOG_LINES"),
+		stacktrace:     getEnvBool("PENLOG_STACKTRACE"),
 		systemdJournal: systemdJournal,
-		jsonStderr:     true,
+		jsonStderr:     getEnvBool("PENLOG_HR"),
 		writer:         w,
 	}
 }
@@ -182,6 +181,14 @@ func (l *Logger) outputJournal(msg map[string]interface{}) {
 	if err := journal.Send(data, journal.Priority(prio), vars); err != nil {
 		panic(err)
 	}
+}
+
+func (l *Logger) outputHr(msg map[string]interface{}) {
+	line, err := l.HRFormatter.Format(msg)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Fprintf(os.Stderr, "%s\n", line)
 }
 
 func (l *Logger) output(msg map[string]interface{}, depth int) {
