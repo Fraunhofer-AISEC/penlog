@@ -335,9 +335,10 @@ func main() {
 	)
 
 	pflag.BoolVar(&colorsCli, "show-colors", true, "enable colorized output based on priorities")
-	pflag.BoolVar(&linesCli, "show-lines", true, "show line numbers if available")
-	pflag.BoolVar(&stacktraceCli, "show-stacktraces", true, "show stacktrace if available")
+	pflag.BoolVar(&linesCli, "show-lines", false, "show line numbers if available")
+	pflag.BoolVar(&stacktraceCli, "show-stacktraces", false, "show stacktrace if available")
 	pflag.BoolVar(&conv.formatter.ShowID, "show-ids", false, "show unique message id")
+	pflag.BoolVar(&conv.formatter.ShowTags, "show-tags", false, "show penlog message tags")
 	pflag.StringVarP(&conv.jq, "jq", "j", "", "run the jq tool as a preprocessor")
 	pflag.StringVarP(&conv.id, "id", "i", "", "only show this particular message")
 	pflag.IntVarP(&conv.formatter.CompLen, "complen", "c", 8, "len of component field")

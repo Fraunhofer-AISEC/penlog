@@ -60,6 +60,7 @@ type HRFormatter struct {
 	ShowStacktraces bool
 	ShowLevelPrefix bool
 	ShowID          bool
+	ShowTags        bool
 	TinyFormat      bool
 }
 
@@ -70,9 +71,10 @@ func NewHRFormatter() *HRFormatter {
 		TypeLen:         8,
 		LogLevel:        PrioDebug,
 		ShowColors:      false,
-		ShowLines:       true,
-		ShowStacktraces: true,
+		ShowLines:       false,
+		ShowStacktraces: false,
 		ShowLevelPrefix: false,
+		ShowTags:        false,
 		TinyFormat:      true,
 	}
 }
@@ -149,16 +151,6 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		}
 	}
 	payload = fmt.Sprintf(fmtStr, payload)
-	if f.ShowLines {
-		if line, ok := msg["line"]; ok {
-			if f.ShowColors {
-				fmtStr += " " + Colorize(ColorBlue, "(%s)")
-			} else {
-				fmtStr += " " + "(%s)"
-			}
-			payload = fmt.Sprintf(fmtStr, payload, line)
-		}
-	}
 	tsParsed, err := time.Parse("2006-01-02T15:04:05.000000", ts)
 	if err != nil {
 		return "", err
@@ -177,8 +169,34 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		if rawVal, ok := msg["id"]; ok {
 			if val, ok := rawVal.(string); ok {
 				out += "\n"
-				out += "  => "
-				out += val
+				out += "  => id  : "
+				if f.ShowColors {
+					out += Colorize(ColorYellow, val)
+				} else {
+					out += val
+				}
+			}
+		}
+	}
+	if f.ShowLines {
+		if line, ok := msg["line"]; ok {
+			out += "\n"
+			out += "  => line: "
+			if f.ShowColors {
+				out += fmt.Sprintf(Colorize(ColorBlue, "%s"), line)
+			} else {
+				out += fmt.Sprintf("%s", line)
+			}
+		}
+	}
+	if f.ShowTags {
+		if rawVal, ok := msg["tags"]; ok {
+			if val, ok := rawVal.([]interface{}); ok && len(val) > 0 {
+				out += "\n"
+				out += "  => tags: "
+				for _, tag := range val {
+					out += fmt.Sprintf("%v ", tag)
+				}
 			}
 		}
 	}
@@ -186,9 +204,15 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		if rawVal, ok := msg["stacktrace"]; ok {
 			if val, ok := rawVal.(string); ok {
 				out += "\n"
+				out += "  => stacktrace: \n"
 				for _, line := range strings.Split(val, "\n") {
-					out += "  |"
-					out += line
+					if f.ShowColors {
+						out += Colorize(ColorGray, "  |")
+						out += Colorize(ColorGray, line)
+					} else {
+						out += "  |"
+						out += line
+					}
 					out += "\n"
 				}
 			}
