@@ -198,6 +198,12 @@ func convertVarsForJournal(in map[string]interface{}) map[string]string {
 		re  = regexp.MustCompile(`(.+):([0-9]+)$`)
 	)
 
+	if rawVal, ok := in["id"]; ok {
+		if val, ok := rawVal.(string); ok {
+			out["MESSAGE_ID"] = val
+		}
+	}
+
 	if rawVal, ok := in["component"]; ok {
 		if val, ok := rawVal.(string); ok {
 			out["COMPONENT"] = val
