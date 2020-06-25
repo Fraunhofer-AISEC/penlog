@@ -41,6 +41,7 @@ const (
 	OutTypeHR OutType = iota
 	OutTypeHRTiny
 	OutTypeJSON
+	OutTypeJSONPretty
 	OutTypeSystemdJournal
 )
 
@@ -89,6 +90,8 @@ func NewLogger(component string, w io.Writer) *Logger {
 		hrFormatter.TinyFormat = true
 	case "json":
 		outputType = OutTypeJSON
+	case "json-pretty":
+		outputType = OutTypeJSONPretty
 	case "systemd":
 		outputType = OutTypeSystemdJournal
 	default:
@@ -286,6 +289,15 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 		l.outputHR(msg)
 	case OutTypeJSON:
 		b, err := json.Marshal(msg)
+		if err != nil {
+			// This is clearly a bug!
+			panic(err)
+		}
+		l.buf.Write(b)
+		l.buf.WriteString("\n")
+		l.buf.WriteTo(l.writer)
+	case OutTypeJSONPretty:
+		b, err := json.MarshalIndent(msg, "", "  ")
 		if err != nil {
 			// This is clearly a bug!
 			panic(err)
