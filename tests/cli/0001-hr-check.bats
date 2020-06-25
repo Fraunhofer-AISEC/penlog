@@ -80,7 +80,7 @@ setup() {
 
 @test "force colors using pipes" {
 	local out
-	out="$(env PENLOG_FORCE_COLORS=1 hr --colors=true "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(env PENLOG_FORCE_COLORS=1 hr --show-colors=true "${HRFLAGS[@]}" example-colors.log.json)"
 	compstr "$out" "$expected_colors"
 }
 
