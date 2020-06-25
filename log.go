@@ -318,10 +318,20 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 	}
 }
 
+// Log is the lowest level logging primitive. Any fields can be added
+// to the emitted logging message. The penlog fields id, timestamp,
+// timezone, component, host, line, and stacktrace are added by the
+// underlying logic. Besides this any field can be added. Be aware of
+// the mandatory fields in the penlog(7) specification. There might be
+// dragons.
 func (l *Logger) Log(msg map[string]interface{}) {
 	l.output(msg, 3)
 }
 
+// LogMessage is a higher level interface for emitting log messages.
+// In contrast to Log it is not possible to emit invalid messages by
+// accident. The following penlog fields are filled: data, type, priority
+// tags. Tags might be nil.
 func (l *Logger) LogMessage(msgType string, prio Prio, tags []string, v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprint(v...),
@@ -332,6 +342,8 @@ func (l *Logger) LogMessage(msgType string, prio Prio, tags []string, v ...inter
 	l.output(msg, 3)
 }
 
+// LogMessagef is the same as LogMessage except that it takes a Printf
+// like format string and the relevant arguments.
 func (l *Logger) LogMessagef(msgType string, prio Prio, tags []string, format string, v ...interface{}) {
 	var msg = map[string]interface{}{
 		"data":     fmt.Sprintf(format, v...),
@@ -362,6 +374,11 @@ func (l *Logger) logMessagef(msgType string, prio Prio, tags []string, format st
 	l.output(msg, 4)
 }
 
+// Write is the implemantation of the Go Writer interface. This
+// method is very limited; it emits messages of type "message"
+// at the priority info. The writer interface might be useful to
+// pass a penlog logger to a library which supports a Writer for
+// logging purposes.
 func (l *Logger) Write(p []byte) (int, error) {
 	l.logMessage(msgTypeMessage, PrioInfo, nil, string(p))
 	return len(p), nil
