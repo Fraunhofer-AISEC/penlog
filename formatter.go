@@ -112,16 +112,18 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 	fmtStr := "%s"
 	if f.ShowLevelPrefix {
 		switch priority {
-		case PrioEmergency,
-			PrioAlert,
-			PrioCritical:
-			fmtStr = "[!] %s"
+		case PrioEmergency:
+			fmtStr = "[E] %s"
+		case PrioAlert:
+			fmtStr = "[A] %s"
+		case PrioCritical:
+			fmtStr = "[C] %s"
 		case PrioError:
 			fmtStr = "[E] %s"
 		case PrioWarning:
-			fmtStr = "[W] %s"
+			fmtStr = "[w] %s"
 		case PrioNotice:
-			fmtStr = "[N] %s"
+			fmtStr = "[n] %s"
 		case PrioInfo:
 			fmtStr = "[i] %s"
 		case PrioDebug:
