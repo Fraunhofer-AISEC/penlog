@@ -153,9 +153,14 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 		}
 	}
 	payload = fmt.Sprintf(fmtStr, payload)
-	tsParsed, err := time.Parse(time.RFC3339Nano, ts)
+
+	var tsParsed time.Time
+	tsParsed, err = time.Parse(time.RFC3339Nano, ts)
 	if err != nil {
-		return "", err
+		tsParsed, err = time.Parse("2006-01-02T15:04:05.000000", ts)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	ts = tsParsed.Format(f.Timespec)
