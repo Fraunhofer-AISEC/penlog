@@ -128,11 +128,11 @@ class HRFormatter:
         if self.show_stacktraces and "stacktrace" in msg:
             out += "\n"
             out += " => stacktrace:\n"
-            for line in msg['stacktrace']:
+            for line in msg['stacktrace'].splitlines():
                 if self.show_colors:
-                    out += colorize(Color.GRAY, f" | {line}")
+                    out += colorize(Color.GRAY, f" | {line}\n")
                 else:
-                    out += f" | {line}"
+                    out += f" | {line}\n"
         return out
 
 
