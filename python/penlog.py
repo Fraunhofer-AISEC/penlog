@@ -11,12 +11,7 @@ from enum import Enum, IntEnum
 from typing import Dict, List, TextIO, Optional
 
 
-# TODO: minimize! This is not intended like this.
 class MessageType(str, Enum):
-    ERROR = "error"
-    WARNING = "warning"
-    INFO = "info"
-    DEBUG = "debug"
     READ = "read"
     WRITE = "write"
     PREAMBLE = "preamble"
