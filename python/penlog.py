@@ -42,7 +42,7 @@ class OutputType(Enum):
     HR_TINY = "hr-tiny"
 
 
-class Colors(Enum):
+class Color(Enum):
     NOP = ""
     RESET = "\033[0m"
     BOLD = "\033[1m"
@@ -56,10 +56,10 @@ class Colors(Enum):
     GRAY = "\033[0;38;5;245m"
 
 
-def colorize(color: Colors, s: str) -> str:
-    if color == Colors.NOP:
+def colorize(color: Color, s: str) -> str:
+    if color == Color.NOP:
         return s
-    return f"{color.value}{s}{Colors.RESET.value}"
+    return f"{color.value}{s}{Color.RESET.value}"
 
 
 def _get_line_number(depth: int) -> str:
@@ -84,6 +84,22 @@ class HRFormatter:
         self.show_tags = show_tags
         self.tiny = tiny
 
+    @staticmethod
+    def _colorize_data(data: str, prio: MessagePrio) -> str:
+        if prio == MessagePrio.EMERGENCY or \
+                prio == MessagePrio.ALERT or \
+                prio == MessagePrio.CRITICAL or \
+                prio == MessagePrio.ERROR:
+            data = colorize(Color.BOLD, colorize(Color.RED, data))
+        elif prio == MessagePrio.WARNING:
+            data = colorize(Color.BOLD, colorize(Color.YELLOW, data))
+        elif prio == MessagePrio.NOTICE:
+            data = colorize(Color.BOLD, data)
+        elif prio == MessagePrio.INFO:
+            pass
+        elif prio == MessagePrio.DEBUG:
+            data = colorize(Color.GRAY, data)
+
     def format(self, msg: Dict) -> str:
         out = ""
         ts = datetime.fromisoformat(msg["timestamp"])
@@ -93,19 +109,7 @@ class HRFormatter:
         data = msg["data"]
         if self.show_colors and "priority" in msg:
             prio = MessagePrio(msg["priority"])
-            if prio == MessagePrio.EMERGENCY or \
-                    prio == MessagePrio.ALERT or \
-                    prio == MessagePrio.CRITICAL or \
-                    prio == MessagePrio.ERROR:
-                data = colorize(Colors.BOLD, colorize(Colors.RED, data))
-            elif prio == MessagePrio.WARNING:
-                data = colorize(Colors.BOLD, colorize(Colors.YELLOW, data))
-            elif prio == MessagePrio.NOTICE:
-                data = colorize(Colors.BOLD, data)
-            elif prio == MessagePrio.INFO:
-                pass
-            elif prio == MessagePrio.DEBUG:
-                data = colorize(Colors.GRAY, data)
+            data = self._colorize_data(data, prio)
         if self.tiny:
             out = f"{ts_formatted}: {data}"
         else:
@@ -113,13 +117,13 @@ class HRFormatter:
         if self.show_ids and "id" in msg:
             out += "\n"
             if self.show_colors:
-                out += f" => id  : {colorize(Colors.YELLOW, msg['id'])}"
+                out += f" => id  : {colorize(Color.YELLOW, msg['id'])}"
             else:
                 out += f" => id  : {msg['id']}"
         if self.show_lines and "line" in msg:
             out += "\n"
             if self.show_colors:
-                out += f" => line: {colorize(Colors.BLUE, msg['line'])}"
+                out += f" => line: {colorize(Color.BLUE, msg['line'])}"
             else:
                 out += f" => line: {msg['line']}"
         if self.show_tags and "tags" in msg:
@@ -130,7 +134,7 @@ class HRFormatter:
             out += " => stacktrace:\n"
             for line in msg['stacktrace']:
                 if self.show_colors:
-                    out += colorize(Colors.GRAY, f" | {line}")
+                    out += colorize(Color.GRAY, f" | {line}")
                 else:
                     out += f" | {line}"
         return out
