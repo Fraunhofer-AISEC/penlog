@@ -6,6 +6,7 @@ import os
 import socket
 import sys
 import traceback
+import uuid
 from datetime import datetime
 from enum import Enum, IntEnum
 from typing import Dict, List, TextIO, Optional
@@ -168,9 +169,12 @@ class Logger:
                     return
             except ValueError:
                 pass
+        msg["id"] = str(uuid.uuid4())
         msg["component"] = self.component
         msg["host"] = self.host
-        msg["timestamp"] = datetime.now().isoformat()
+        now = datetime.now().astimezone()
+        msg["timestamp"] = now.isoformat()
+        msg["timezone"] = now.strftime("%z")
         if self.lines:
             msg["line"] = _get_line_number(depth)
         if self.stacktraces:
