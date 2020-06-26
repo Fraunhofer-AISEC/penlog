@@ -174,7 +174,6 @@ class Logger:
         msg["host"] = self.host
         now = datetime.now().astimezone()
         msg["timestamp"] = now.isoformat()
-        msg["timezone"] = now.strftime("%z")
         if self.lines:
             msg["line"] = _get_line_number(depth)
         if self.stacktraces:

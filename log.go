@@ -137,7 +137,7 @@ func NewLogger(component string, w io.Writer) *Logger {
 		host:        hostname,
 		loglevel:    loglevel,
 		component:   component,
-		timespec:    "2006-01-02T15:04:05.000000",
+		timespec:    "2006-01-02T15:04:05.000000-0700",
 		lines:       helpers.GetEnvBool("PENLOG_CAPTURE_LINES"),
 		stacktrace:  helpers.GetEnvBool("PENLOG_CAPTURE_STACKTRACES"),
 		outputType:  outputType,
@@ -279,7 +279,6 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 	)
 	msg["id"] = id.String()
 	msg["timestamp"] = now.Format(l.timespec)
-	msg["timezone"] = now.Format("-0700")
 	msg["component"] = l.component
 	msg["host"] = l.host
 	if l.lines {

@@ -59,9 +59,6 @@ Unset fields which are considered optional MUST be absent.
 `timestamp` (string, REQUIRED)::
     ISO8601 string of the current date.
 
-`timezone` (string, OPTIONAL)::
-    The timezone in numeric form, e.g. `-0100`.
-
 `type` (string, REQUIRED)::
     The type field is a free field which can be used to assign a particular message type.
 
