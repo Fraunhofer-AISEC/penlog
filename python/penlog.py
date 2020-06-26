@@ -143,12 +143,14 @@ class HRFormatter:
 class Logger:
     def __init__(self, component: str = "root", flush: bool = False,
                  file_: TextIO = sys.stderr,
+                 loglevel: MessagePrio = MessagePrio.DEBUG,
                  output_type: Optional[OutputType] = None,
                  show_colors: bool = False):
         self.host = socket.gethostname()
         self.component = component
         self.flush = flush
         self.file = file_
+        self.loglevel = loglevel
         if output_type:
             self.output_type = output_type
         else:
@@ -164,6 +166,13 @@ class Logger:
                                         self.stacktraces, False, is_tiny)
 
     def _log(self, msg: Dict, depth: int) -> None:
+        if "priority" in msg:
+            try:
+                prio = MessagePrio(msg["priority"])
+                if prio > self.loglevel:
+                    return
+            except ValueError:
+                pass
         msg["component"] = self.component
         msg["host"] = self.host
         msg["timestamp"] = datetime.now().isoformat()
