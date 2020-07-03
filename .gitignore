@@ -1,1 +1,6 @@
 /hr
+/pendump
+*pcap
+*pcapng
+*pcap.gz
+*pcapng.gz
