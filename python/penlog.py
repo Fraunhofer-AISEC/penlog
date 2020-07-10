@@ -95,6 +95,7 @@ class HRFormatter:
             pass
         elif prio == MessagePrio.DEBUG:
             data = colorize(Color.GRAY, data)
+        return data
 
     def format(self, msg: Dict) -> str:
         out = ""
@@ -245,4 +246,3 @@ class Logger:
 
     def log_summary(self, data: str, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE, tags)
-
