@@ -1,0 +1,197 @@
+#!/bin/bash
+
+set -eu
+
+HR="n"
+HR_ARGS=()
+
+search_configs() {
+    local pwd_conf="$PWD/.penrun.sh"
+    if [[ -f "$pwd_conf" ]]; then
+        export PENRUN_PWD_CONF="$pwd_conf"
+    fi
+
+    local git_root
+    if git_root="$(git rev-parse --show-toplevel 2> /dev/null)"; then
+        local git_root_conf="$git_root/.penrun.sh"
+        if [[ -f "$git_root_conf" ]]; then
+            export PENRUN_GIT_ROOT_CONF="$git_root_conf"
+        fi
+    fi
+
+    local user_conf="$HOME/.config/penrun/config.sh"
+    if [[ -f "$user_conf" ]]; then
+        export PENRUN_USER_CONF="$pwd_conf"
+    fi
+
+    local global_conf="/etc/penrun/config.sh"
+    if [[ -f "$user_conf" ]]; then
+        export PENRUN_GLOBAL_CONF="$global_conf"
+    fi
+}
+
+search_and_source_config() {
+    search_configs
+
+    if [[ -n "${PENRUN_PWD_CONF-}" ]]; then
+        source "$PENRUN_PWD_CONF"
+        return 0
+    fi
+    if [[ -n "${PENRUN_GIT_ROOT_CONF-}" ]]; then
+        source "$PENRUN_GIT_ROOT_CONF"
+        return 0
+    fi
+    if [[ -n "${PENRUN_USER_CONF-}" ]]; then
+        source "$PENRUN_USER_CONF"
+        return 0
+    fi
+    if [[ -n "${PENRUN_GLOBAL_CONF-}" ]]; then
+        source "$PENRUN_GLOBAL_CONF"
+        return 0
+    fi
+}
+
+# $1: path
+mkdir_if_not_exists() {
+    if [[ ! -d "$1" ]]; then
+        mkdir -p "$1"
+    fi
+}
+
+isfunction() {
+    if [[ "$(type -t "$1")" == "function" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Create META file in current directory.
+# $1: command
+meta_create() {
+    local filepath="META"
+    local cmd="$1"
+    echo "COMMAND: ${cmd[*]}" > "$filepath"
+    echo "START: $(date --iso-8601=seconds)" >> "$filepath"
+}
+
+meta_end() {
+    local filepath="META"
+    local exit_code="$1"
+    echo "END: $(date --iso-8601=seconds)" >> "$filepath"
+    echo "EXIT: $exit_code" >> "$filepath"
+}
+
+run_hook() {
+    local artifactsdir="$1"
+    local raw_out
+    shift
+
+    if [[ "$1" == "pre_run" ]]; then
+        raw_out="PRERUN_OUTPUT"
+    elif [[ "$1" == "post_run" ]]; then
+        raw_out="POSTRUN_OUTPUT"
+    else
+        echo "BUG: invalid hook"
+        exit 1
+    fi
+
+    (
+        cd "$artifactsdir" || exit
+        if [[ -n "${PENRUN_NO_HOOK_CAPTURE-}" ]]; then
+            "$@"
+        else
+            "$@" | tee "$raw_out"
+        fi
+    )
+}
+
+# $1   : artifacts dir
+# $2…$n: command
+run_cmd_in_dir() {
+    local artifactsdir="$1"
+    local raw_out="OUTPUT"
+    local latest="LATEST"
+    local envfile="ENV"
+    shift
+
+    mkdir_if_not_exists "$artifactsdir"
+
+    (
+        cd "$artifactsdir" || exit
+        printenv > "$envfile"
+        meta_create "$* ${DEFAULT_ARGS[*]}"
+
+        if [[ "$HR" == "y" ]]; then
+            if [[ -n "${PENRUN_NO_CAPTURE-}" ]]; then
+                "$@" "${DEFAULT_ARGS[@]}" 2>&1 | hr "${HR_ARGS[@]}"
+            else
+                "$@" "${DEFAULT_ARGS[@]}" 2>&1 | tee "$raw_out" | hr "${HR_ARGS[@]}"
+            fi
+        else
+            if [[ -n "${PENRUN_NO_CAPTURE-}" ]]; then
+                "$@" "${DEFAULT_ARGS[@]}" 2>&1
+            else
+                "$@" "${DEFAULT_ARGS[@]}" 2>&1 | tee "$raw_out"
+            fi
+        fi
+
+        meta_end "$?"
+
+        cd ..
+        ln -sfnr "$(basename "$artifactsdir")" "$latest"
+    )
+}
+
+usage() {
+    echo "$(basename "$0") [-rh]"
+    echo ""
+    echo "options:"
+    # TODO: -f for overwriting filer arguments
+    # TODO: -p for a logfiles dir
+    echo " -c FILE  Use this config file exclusively"
+    echo " -r       Produce readable penlog logs and pipe through 'hr'."
+    echo " -h       Show this page and exit."
+}
+
+main() {
+    local scriptname
+    scriptname="$(basename "${1#./}")"
+    local artifactsdir
+    artifactsdir="$scriptname/run-$(date +%Y%m%d-%H%M%S)"
+    local rundir="$artifactsdir"
+    local forced_config=""
+
+    while getopts "c:rh" arg; do
+        case "$arg" in
+            c) forced_config="$OPTARG";;
+            r) HR="y";;
+            h) usage && exit 0;;
+            *) usage && exit 1;;
+        esac
+    done
+
+    if [[ -n "$forced_config" ]]; then
+        if [[ ! -f "$forced_config" ]]; then
+            echo "error: config does not exist"
+            exit 1
+        fi
+        search_configs
+        source "$forced_config"
+    else
+        search_and_source_config
+    fi
+
+    mkdir_if_not_exists "$rundir"
+
+    if isfunction "pre_run"; then
+        run_hook "$rundir" "pre_run"
+    fi
+
+    run_cmd_in_dir "$rundir" "$@"
+
+    if isfunction "post_run"; then
+        run_hook "$rundir" "post_run"
+    fi
+}
+
+main "$@"
