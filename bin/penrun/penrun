@@ -154,12 +154,10 @@ usage() {
 }
 
 main() {
-    local scriptname
-    scriptname="$(basename "${1#./}")"
-    local artifactsdir
-    artifactsdir="$scriptname/run-$(date +%Y%m%d-%H%M%S)"
-    local rundir="$artifactsdir"
-    local forced_config=""
+    if (( $# == 0 )); then
+        echo "error: no command specified"
+        exit 1
+    fi
 
     while getopts "c:rh" arg; do
         case "$arg" in
@@ -169,6 +167,13 @@ main() {
             *) usage && exit 1;;
         esac
     done
+
+    local scriptname
+    scriptname="$(basename "$1")"
+    local artifactsdir
+    artifactsdir="${scriptname%.*}/run-$(date +%Y%m%d-%H%M%S)"
+    local rundir="$artifactsdir"
+    local forced_config=""
 
     if [[ -n "$forced_config" ]]; then
         if [[ ! -f "$forced_config" ]]; then
