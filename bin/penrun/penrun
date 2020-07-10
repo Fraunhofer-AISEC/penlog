@@ -21,7 +21,7 @@ search_configs() {
 
     local user_conf="$HOME/.config/penrun/config.sh"
     if [[ -f "$user_conf" ]]; then
-        export PENRUN_USER_CONF="$pwd_conf"
+        export PENRUN_USER_CONF="$user_conf"
     fi
 
     local global_conf="/etc/penrun/config.sh"
