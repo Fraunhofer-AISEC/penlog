@@ -34,18 +34,22 @@ search_and_source_config() {
     search_configs
 
     if [[ -n "${PENRUN_PWD_CONF-}" ]]; then
+        # shellcheck source=/dev/null
         source "$PENRUN_PWD_CONF"
         return 0
     fi
     if [[ -n "${PENRUN_GIT_ROOT_CONF-}" ]]; then
+        # shellcheck source=/dev/null
         source "$PENRUN_GIT_ROOT_CONF"
         return 0
     fi
     if [[ -n "${PENRUN_USER_CONF-}" ]]; then
+        # shellcheck source=/dev/null
         source "$PENRUN_USER_CONF"
         return 0
     fi
     if [[ -n "${PENRUN_GLOBAL_CONF-}" ]]; then
+        # shellcheck source=/dev/null
         source "$PENRUN_GLOBAL_CONF"
         return 0
     fi
@@ -181,6 +185,7 @@ main() {
             exit 1
         fi
         search_configs
+        # shellcheck source=/dev/null
         source "$forced_config"
     else
         search_and_source_config
