@@ -2,7 +2,7 @@
 
 set -eu
 
-HR="n"
+HR=0
 HR_ARGS=()
 
 search_configs() {
@@ -69,38 +69,54 @@ isfunction() {
     return 1
 }
 
+isabsolute() {
+    if [[ "${1:0:1}" == "/" ]]; then
+        return 0
+    fi
+    return 1
+}
+
 # Create META file in current directory.
-# $1: command
+# $1: artifacts dir
+# $2: command
 meta_create() {
-    local filepath="META"
-    local cmd="$1"
+    local filepath="$1/META"
+    local cmd="$2"
     echo "COMMAND: ${cmd[*]}" > "$filepath"
     echo "START: $(date --iso-8601=seconds)" >> "$filepath"
 }
 
+# $1: artifacts dir
+# $2: exit code
 meta_end() {
-    local filepath="META"
-    local exit_code="$1"
+    local filepath="$1/META"
+    local exit_code="$2"
     echo "END: $(date --iso-8601=seconds)" >> "$filepath"
     echo "EXIT: $exit_code" >> "$filepath"
 }
 
+# $1   : artifacts dir
+# $2   : cd_in
+# $3…$n: command
 run_hook() {
     local artifactsdir="$1"
+    local cd_in="$2"
     local raw_out
-    shift
+    shift 2
 
     if [[ "$1" == "pre_run" ]]; then
-        raw_out="PRERUN_OUTPUT"
+        raw_out="$artifactsdir/PRERUN_OUTPUT"
     elif [[ "$1" == "post_run" ]]; then
-        raw_out="POSTRUN_OUTPUT"
+        raw_out="$artifactsdir/POSTRUN_OUTPUT"
     else
         echo "BUG: invalid hook"
         exit 1
     fi
 
     (
-        cd "$artifactsdir" || exit
+        if (( cd_in )); then
+            cd "$artifactsdir" || exit
+        fi
         if [[ -n "${PENRUN_NO_HOOK_CAPTURE-}" ]]; then
             "$@"
         else
@@ -110,22 +126,27 @@ run_hook() {
 }
 
 # $1   : artifacts dir
-# $2…$n: command
-run_cmd_in_dir() {
+# $2   : cd_in
+# $3…$n: command
+run_cmd() {
+    local latest
     local artifactsdir="$1"
-    local raw_out="OUTPUT"
-    local latest="LATEST"
-    local envfile="ENV"
-    shift
+    local cd_in="$2"
+    local raw_out="$artifactsdir/OUTPUT"
+    local envfile="$artifactsdir/ENV"
+    latest="$(dirname "$artifactsdir")/LATEST"
+    shift 2
 
     mkdir_if_not_exists "$artifactsdir"
 
     (
-        cd "$artifactsdir" || exit
+        if (( cd_in )); then
+            cd "$artifactsdir" || exit
+        fi
         printenv > "$envfile"
-        meta_create "$* ${DEFAULT_ARGS[*]}"
+        meta_create "$artifactsdir" "$* ${DEFAULT_ARGS[*]}"
 
-        if [[ "$HR" == "y" ]]; then
+        if (( HR )); then
             if [[ -n "${PENRUN_NO_CAPTURE-}" ]]; then
                 "$@" "${DEFAULT_ARGS[@]}" 2>&1 | hr "${HR_ARGS[@]}"
             else
@@ -139,21 +160,19 @@ run_cmd_in_dir() {
             fi
         fi
 
-        meta_end "$?"
-
-        cd ..
-        ln -sfnr "$(basename "$artifactsdir")" "$latest"
+        meta_end "$artifactsdir" "$?"
+        ln -sfnr "$artifactsdir" "$latest"
     )
 }
 
 usage() {
-    echo "$(basename "$0") [-rh]"
+    echo "$(basename "$0") [-rh] COMMAND"
     echo ""
     echo "options:"
-    # TODO: -f for overwriting filer arguments
-    # TODO: -p for a logfiles dir
     echo " -c FILE  Use this config file exclusively"
-    echo " -r       Produce readable penlog logs and pipe through 'hr'."
+    echo " -d       Run COMMAND in artifactsdir"
+    echo " -D DIR   Run COMMAND in artifactsdir DIR"
+    echo " -r       Produce readable penlog logs and pipe through 'hr'"
     echo " -h       Show this page and exit."
 }
 
@@ -163,21 +182,33 @@ main() {
         exit 1
     fi
 
-    while getopts "c:rh" arg; do
+    local artifactsdir
+    local cd_in=0
+    while getopts "c:dD:rh" arg; do
         case "$arg" in
             c) forced_config="$OPTARG";;
-            r) HR="y";;
+            r) HR=1;;
+            d) cd_in=1;;
+            D) cd_in=1; artifactsdir="$OPTARG";;
             h) usage && exit 0;;
             *) usage && exit 1;;
         esac
     done
+    shift $((OPTIND-1))
 
+    local forced_config=""
     local scriptname
     scriptname="$(basename "$1")"
-    local artifactsdir
-    artifactsdir="${scriptname%.*}/run-$(date +%Y%m%d-%H%M%S)"
+
+    if [[ -z "${artifactsdir-}" ]]; then
+        artifactsdir="${scriptname%.*}/run-$(date +%Y%m%d-%H%M%S)"
+    fi
+    if ! isabsolute "$artifactsdir"; then
+        artifactsdir="$PWD/$artifactsdir"
+    fi
+
     local rundir="$artifactsdir"
-    local forced_config=""
+    export PENRUN_ARTIFACTS="$artifactsdir"
 
     if [[ -n "$forced_config" ]]; then
         if [[ ! -f "$forced_config" ]]; then
@@ -194,13 +225,13 @@ main() {
     mkdir_if_not_exists "$rundir"
 
     if isfunction "pre_run"; then
-        run_hook "$rundir" "pre_run"
+        run_hook "$rundir" "$cd_in" "pre_run"
     fi
 
-    run_cmd_in_dir "$rundir" "$@"
+    run_cmd "$rundir" "$cd_in" "$@"
 
     if isfunction "post_run"; then
-        run_hook "$rundir" "post_run"
+        run_hook "$rundir" "$cd_in" "post_run"
     fi
 }
 
