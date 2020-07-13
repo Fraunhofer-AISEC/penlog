@@ -9,14 +9,14 @@ pendump - A configurable runner for commands which create artifacts
 == Synopsis
 
 ----
-penrun [ARGS] SHELLCOMMAND…
+penrun [ARGS] COMMAND…
 ----
 
 == Description
 
 penrun(1) is a runner intended for invoking measurements; any shellcommand can be started.
 A well defined directory structure is created for the so called "artifacts".
-SHELLCOMMAND is run within this directory which is there for any results (e.g. pcap files, penlog artifacts, …).
+COMMAND is run within this directory which is there for any results (e.g. pcap files, penlog artifacts, …).
 For more information about the artifacts directory, see the ARTIFACTS section.
 
 == Customization
@@ -51,8 +51,8 @@ If one of these variables (`PENRUN_PWD_CONF`, …) is not defined, then the conf
 The following variables have special meaning in a penrun(1) config script.
 
 DEFAULT_ARGS (array)::
-    These arguments are prepended to the arguments of SHELLCOMMAND.
-    If SHELLCOMMAND is `ls -lah` and DEFAULT_ARGS is `(--foo --bar)`, then the following command is invoked: `ls --foo --bar -lah`.
+    These arguments are prepended to the arguments of COMMAND.
+    If COMMAND is `ls -lah` and DEFAULT_ARGS is `(--foo --bar)`, then the following command is invoked: `ls --foo --bar -lah`.
 
 === Hooks
 
@@ -61,16 +61,16 @@ The hooks are executed in `artifactsdir`.
 The following hooks are available:
 
 `pre_run`::
-    This function is run **before** SHELLCOMMAND.
+    This function is run **before** COMMAND.
 
 `post_run`::
-    This function is run **after** SHELLCOMMAND.
+    This function is run **after** COMMAND.
 
 == Artifacts
 
-On each invocation a new directory is created at the following location `$PWD/$SHELLCOMMAND/run-$(date +%Y%m%d-%H%M%S)`, called `artifactsdir`.
-Before SHELLCOMMAND is invoked, the current directory is changed to `artifactsdir`.
-Artifacts, such as pcap or penlog files, can easily be placed in the current working directory of SHELLCOMMAND.
+On each invocation a new directory is created at the following location `$PWD/$COMMAND/run-$(date +%Y%m%d-%H%M%S)`, called `artifactsdir`.
+Before COMMAND is invoked, the current directory is changed to `artifactsdir`.
+Artifacts, such as pcap or penlog files, can easily be placed in the current working directory of COMMAND.
 The output of stderr and stdout is stored in a file `OUTPUT` in the `artifactsdir`.
 Metainformation, such as the exit code, are placed in a file `META` in the `artifactsdir`.
 The environment is stored in a file `ENV` in the `artifactsdir`.
@@ -84,16 +84,16 @@ Keys are separated from values with a colon `:`; whitespace has no semantic mean
 META files contain the following key value pairs:
 
 COMMAND (string)::
-    The full invocation string; in this manpage referred to as SHELLCOMMAND.
+    The full invocation string; in this manpage referred to as COMMAND.
 
 EXIT (integer)::
-    The exit code of the issued SHELLCOMMAND.
+    The exit code of the issued COMMAND.
 
 START (string)::
-    The exact start date of SHELLCOMMAND in ISO8601 format.
+    The exact start date of COMMAND in ISO8601 format.
 
 END (string)::
-    The exact end date of SHELLCOMMAND in ISO8601 format.
+    The exact end date of COMMAND in ISO8601 format.
 
 === ENV
 
@@ -102,7 +102,7 @@ The format is the same as produced by the `printenv` tool.
 
 === OUTPUT
 
-OUTPUT files contain the unfiltered stderr and stdout of SHELLCOMMAND.
+OUTPUT files contain the unfiltered stderr and stdout of COMMAND.
 It may be compressed which is then indicated with a `.gz` or `.zst` file extension.
 
 If hooks are run, their output is stored in PRERUN_OUTPUT and POSTRUN_OUTPUT.
@@ -125,11 +125,25 @@ If hooks are run, their output is stored in PRERUN_OUTPUT and POSTRUN_OUTPUT.
 
 == Environment Variables
 
+PENRUN_ARTIFACTS::
+    This variable is set by penrun to the current artifactsdir.
+    Spawned programs can use this variable to locate the current artifactsdir to store further artifacts on their own.
+
+PENRUN_COMPRESS_OUTPUT::
+    If this variable is set to a non empty value, OUTPUT, PRERUN_OUTPUT, and POSTRUN_OUTPUT are compressed via gzip.
+    If this variable is set to `gzip` or `zst`, the relevant compression algorithm is chosen.
+
 PENRUN_NO_CAPTURE::
     If this variable is set to a non empty value, do not create an OUTPUT file, since the user knows better.
 
 PENRUN_NO_HOOK_CAPTURE::
     If this variable is set to a non empty value, do not create PRERUN_OUTPUT and POSTRUN_OUTPUT files, since the user knows better.
+
+PENRUN_PWD_CONF::
+PENRUN_GIT_ROOT_CONF::
+PENRUN_USER_CONF::
+PENRUN_GLOBAL_CONF::
+    These variables are set if the appropriate config exists (see CUSTOMIZATION).
 
 == See Also
 

@@ -5,6 +5,25 @@ set -eu
 HR=0
 HR_ARGS=()
 
+# $1: file
+compress() {
+    local f="$1"
+    if [[ ! -f "$f" ]]; then
+        return 1
+    fi
+    if [[ -z "${PENRUN_COMPRESS_OUTPUT-}" ]]; then
+        return 1
+    fi
+    local algorithm="$PENRUN_COMPRESS_OUTPUT"
+
+    case "$algorithm" in
+        gz)    gzip "$f";;
+        zst)   zstd --rm "$f";;
+        *)     gzip "$f";;
+    esac
+    return 0
+}
+
 search_configs() {
     local pwd_conf="$PWD/.penrun.sh"
     if [[ -f "$pwd_conf" ]]; then
@@ -121,6 +140,7 @@ run_hook() {
             "$@"
         else
             "$@" | tee "$raw_out"
+            compress "$raw_out" || true
         fi
     )
 }
@@ -161,6 +181,7 @@ run_cmd() {
         fi
 
         meta_end "$artifactsdir" "$?"
+        compress "$raw_out" || true
         ln -sfnr "$artifactsdir" "$latest"
     )
 }
