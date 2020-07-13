@@ -7,19 +7,19 @@ expected=""
 HRFLAGS=("--complen=8" "--typelen=7")
 
 setup() {
-	data="$(cat example.log.json)"
-	expected="$(cat example.log)"
-	data_color="$(cat example-colors.log.json)"
-	expected_colors="$(cat example-colors.log)"
-	expected_colors_stripped="$(cat example-colors-stripped.log)"
-	expected_prio_debug="$(cat example-level-debug.log)"
-	expected_prio_info="$(cat example-level-info.log)"
-	expected_prio_notice="$(cat example-level-notice.log)"
-	expected_prio_warning="$(cat example-level-warning.log)"
-	expected_prio_error="$(cat example-level-error.log)"
-	expected_prio_critical="$(cat example-level-critical.log)"
-	expected_prio_alert="$(cat example-level-alert.log)"
-	expected_prio_emergency="$(cat example-level-emergency.log)"
+	data="$(< example.log.json)"
+	expected="$(< example.log)"
+	data_color="$(< example-colors.log.json)"
+	expected_colors="$(< example-colors.log)"
+	expected_colors_stripped="$(< example-colors-stripped.log)"
+	expected_prio_debug="$(< example-level-debug.log)"
+	expected_prio_info="$(< example-level-info.log)"
+	expected_prio_notice="$(< example-level-notice.log)"
+	expected_prio_warning="$(< example-level-warning.log)"
+	expected_prio_error="$(< example-level-error.log)"
+	expected_prio_critical="$(< example-level-critical.log)"
+	expected_prio_alert="$(< example-level-alert.log)"
+	expected_prio_emergency="$(< example-level-emergency.log)"
 }
 
 @test "data from pipe to stdout" {
