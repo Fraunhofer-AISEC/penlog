@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -eu
+set -u
+set -o pipefail
 
 HR=0
 HR_ARGS=()
@@ -21,7 +22,7 @@ compress() {
         zst)   zstd --rm "$f";;
         *)     gzip "$f";;
     esac
-    return 0
+    return "$?"
 }
 
 search_configs() {
@@ -140,7 +141,7 @@ run_hook() {
             "$@"
         else
             "$@" | tee "$raw_out"
-            compress "$raw_out" || true
+            compress "$raw_out"
         fi
     )
 }
@@ -181,7 +182,7 @@ run_cmd() {
         fi
 
         meta_end "$artifactsdir" "$?"
-        compress "$raw_out" || true
+        compress "$raw_out"
         ln -sfnr "$artifactsdir" "$latest"
     )
 }
@@ -246,13 +247,19 @@ main() {
     mkdir_if_not_exists "$rundir"
 
     if isfunction "pre_run"; then
-        run_hook "$rundir" "$cd_in" "pre_run"
+        if ! run_hook "$rundir" "$cd_in" "pre_run"; then
+            echo "error: pre_run hook failed"
+            exit 1
+        fi
     fi
 
     run_cmd "$rundir" "$cd_in" "$@"
 
     if isfunction "post_run"; then
-        run_hook "$rundir" "$cd_in" "post_run"
+        if ! run_hook "$rundir" "$cd_in" "post_run"; then
+            echo "error: post_run hook failed"
+            exit 1
+        fi
     fi
 }
 

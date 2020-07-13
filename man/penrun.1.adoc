@@ -57,7 +57,8 @@ DEFAULT_ARGS (array)::
 === Hooks
 
 Hook functions can be defined as ordinary shell functions.
-The hooks are executed in `artifactsdir`.
+Hooks must finish with exit code 0.
+Any other code is considered an error by penrun causing penrun to exit.
 The following hooks are available:
 
 `pre_run`::
