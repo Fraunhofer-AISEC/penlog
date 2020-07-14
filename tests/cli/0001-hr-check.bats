@@ -7,19 +7,19 @@ expected=""
 HRFLAGS=("--complen=8" "--typelen=7")
 
 setup() {
-	data="$(< example.log.json)"
-	expected="$(< example.log)"
-	data_color="$(< example-colors.log.json)"
-	expected_colors="$(< example-colors.log)"
-	expected_colors_stripped="$(< example-colors-stripped.log)"
-	expected_prio_debug="$(< example-level-debug.log)"
-	expected_prio_info="$(< example-level-info.log)"
-	expected_prio_notice="$(< example-level-notice.log)"
-	expected_prio_warning="$(< example-level-warning.log)"
-	expected_prio_error="$(< example-level-error.log)"
-	expected_prio_critical="$(< example-level-critical.log)"
-	expected_prio_alert="$(< example-level-alert.log)"
-	expected_prio_emergency="$(< example-level-emergency.log)"
+	data="$(< hr/example.log.json)"
+	expected="$(< hr/example.log)"
+	data_color="$(< hr/example-colors.log.json)"
+	expected_colors="$(< hr/example-colors.log)"
+	expected_colors_stripped="$(< hr/example-colors-stripped.log)"
+	expected_prio_debug="$(< hr/example-level-debug.log)"
+	expected_prio_info="$(< hr/example-level-info.log)"
+	expected_prio_notice="$(< hr/example-level-notice.log)"
+	expected_prio_warning="$(< hr/example-level-warning.log)"
+	expected_prio_error="$(< hr/example-level-error.log)"
+	expected_prio_critical="$(< hr/example-level-critical.log)"
+	expected_prio_alert="$(< hr/example-level-alert.log)"
+	expected_prio_emergency="$(< hr/example-level-emergency.log)"
 }
 
 @test "data from pipe to stdout" {
@@ -30,7 +30,7 @@ setup() {
 
 @test "data from file to stdout" {
 	local out
-	out="$(hr "${HRFLAGS[@]}" example.log.json)"
+	out="$(hr "${HRFLAGS[@]}" hr/example.log.json)"
 	compstr "$out" "$expected"
 }
 
@@ -38,8 +38,8 @@ setup() {
 	local out
 	echo "$expected" > "$BATS_TMPDIR/expected"
 	echo "$expected" >> "$BATS_TMPDIR/expected"
-	out="$(hr "${HRFLAGS[@]}" example.log.json example.log.json)"
-	compstr "$out" "$(cat $BATS_TMPDIR/expected)"
+	out="$(hr "${HRFLAGS[@]}" hr/example.log.json hr/example.log.json)"
+	compstr "$out" "$(< $BATS_TMPDIR/expected)"
 	rm "$BATS_TMPDIR/expected"
 }
 
@@ -72,7 +72,7 @@ setup() {
 
 @test "data from file with priorities redirected to file" {
 	local out
-	hr "${HRFLAGS[@]}" example-colors.log.json > "$BATS_TMPDIR/foo.log"
+	hr "${HRFLAGS[@]}" "hr/example-colors.log.json" > "$BATS_TMPDIR/foo.log"
 	out="$(cat $BATS_TMPDIR/foo.log)"
 	compstr "$out" "$expected_colors_stripped"
 	rm "$BATS_TMPDIR/foo.log"
@@ -80,7 +80,7 @@ setup() {
 
 @test "force colors using pipes" {
 	local out
-	out="$(env PENLOG_FORCE_COLORS=1 hr --show-colors=true "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(PENLOG_FORCE_COLORS=1 hr --show-colors=true "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_colors"
 }
 
@@ -89,28 +89,28 @@ setup() {
 	local HRFLAGS
 	HRFLAGS=("--complen=8" "--typelen=8")
 
-	out="$(hr -p debug "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p debug "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_debug"
 
-	out="$(hr -p info "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p info "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_info"
 
-	out="$(hr -p notice "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p notice "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_notice"
 
-	out="$(hr -p warning "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p warning "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_warning"
 
-	out="$(hr -p error "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p error "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_error"
 
-	out="$(hr -p critical "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p critical "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_critical"
 
-	out="$(hr -p alert "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p alert "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_alert"
 
-	out="$(hr -p emergency "${HRFLAGS[@]}" example-colors.log.json)"
+	out="$(hr -p emergency "${HRFLAGS[@]}" hr/example-colors.log.json)"
 	compstr "$out" "$expected_prio_emergency"
 }
 

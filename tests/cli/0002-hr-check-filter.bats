@@ -6,27 +6,27 @@ data=""
 HRFLAGS=("--complen=8" "--typelen=7")
 
 setup() {
-	data="$(< example.log.json)"
+	data="$(< hr/example.log.json)"
 }
 
 @test "filter component" {
 	local expected
 	out="$(echo "$data" | hr "${HRFLAGS[@]}" -f abcd::-)"
-	expected="$(< example-abcd.log)"
+	expected="$(< hr/example-abcd.log)"
 	compstr "$out" "$expected"
 }
 
 @test "filter message types" {
 	local expected
 	out="$(echo "$data" | hr "${HRFLAGS[@]}" -f read,write:-)"
-	expected="$(< example-read-write.log)"
+	expected="$(< hr/example-read-write.log)"
 	compstr "$out" "$expected"
 }
 
 @test "filter component and types" {
 	local expected
 	out="$(echo "$data" | hr "${HRFLAGS[@]}" -f abcd:read,write:-)"
-	expected="$(< example-abcd-read-write.log)"
+	expected="$(< hr/example-abcd-read-write.log)"
 	compstr "$out" "$expected"
 }
 

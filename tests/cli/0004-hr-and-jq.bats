@@ -5,21 +5,21 @@ load lib-helpers
 data=""
 
 setup() {
-	data="$(< example.log.json)"
-    expected="$(< example-no-ipc.log)"
+	data="$(< hr/example.log.json)"
+    expected="$(< hr/example-no-ipc.log)"
 }
 
 @test "jq with reading from stdin" {
 	local expected
-	out="$(hr -j '.|select(.component != "ipc")' < example.log.json)"
-	expected="$(< example-no-ipc.log)"
+	out="$(hr -j '.|select(.component != "ipc")' < hr/example.log.json)"
+	expected="$(< hr/example-no-ipc.log)"
 	compstr "$out" "$expected"
 }
 
 @test "jq with reading from file" {
 	local expected
-	out="$(hr -j '.|select(.component != "ipc")' example.log.json)"
-	expected="$(< example-no-ipc.log)"
+	out="$(hr -j '.|select(.component != "ipc")' hr/example.log.json)"
+	expected="$(< hr/example-no-ipc.log)"
 	compstr "$out" "$expected"
 }
 

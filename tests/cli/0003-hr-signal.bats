@@ -3,7 +3,7 @@
 data=""
 
 setup() {
-	data="$(< example.log.json)"
+	data="$(< hr/example.log.json)"
 }
 
 @test "receive SIGINT" {
