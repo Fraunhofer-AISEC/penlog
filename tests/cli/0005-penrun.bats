@@ -17,13 +17,13 @@ load lib-helpers
         for line in "${meta[@]}"; do
             local cmd
             local exit_code
-            if [[ "$line" =~ EXIT:[[:space:]](.+) ]]; then
+            if [[ "$line" =~ EXIT:(.+) ]]; then
                 exit_code="${BASH_REMATCH[1]}"
                 if ((exit_code != 0)); then
                     return 1
                 fi
             fi
-            if [[ "$line" =~ COMMAND:[[:space:]](.+)\s$ ]]; then
+            if [[ "$line" =~ COMMAND:(.+)\s$ ]]; then
                 cmd="${BASH_REMATCH[1]}"
                 if [[ "$cmd" != "ls -lah" ]]; then
                     echo "$cmd"
