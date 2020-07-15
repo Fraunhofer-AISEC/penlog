@@ -47,6 +47,7 @@ func (d *dumper) run() {
 
 	d.writer.Flush()
 	if d.gzipper != nil {
+		d.gzipper.Flush()
 		d.gzipper.Close()
 	}
 	d.file.Close()
