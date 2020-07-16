@@ -75,17 +75,28 @@ func main() {
 		readyFile = os.NewFile(uintptr(fd), "readyfd")
 		os.Unsetenv("READY_FD")
 	}
-	outfile, err = os.Create(opts.outfile)
-	if err != nil {
-		logger.LogCritical(err)
-		os.Exit(1)
+	if opts.outfile == "-" {
+		outfile = os.Stdout
+	} else {
+		if s, err := os.Stat(opts.outfile); err != nil && s.Mode()&os.ModeNamedPipe != 0 {
+			outfile, err = os.Open(opts.outfile)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+		} else {
+			outfile, err = os.Create(opts.outfile)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+		}
 	}
 
 	handle, err := pcap.OpenLive(opts.iface, int32(opts.snaplen), opts.promiscuous, opts.timeout)
 	if err != nil {
 		logger.LogCritical(err)
-		logger.LogInfo("if it is a permission problem, try:")
-		logger.LogInfo("sudo setcap cap_dac_override,cap_net_admin,cap_net_raw+eip ./pendump")
+		logger.LogInfo("if it is a permission problem, see the documentation")
 		os.Exit(1)
 	}
 
@@ -109,7 +120,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.LogInfof("capturing interface: '%s'", opts.iface)
+	logger.LogDebugf("capturing interface: '%s'", opts.iface)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
