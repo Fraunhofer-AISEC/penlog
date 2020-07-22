@@ -5,6 +5,7 @@ set -o pipefail
 
 HR=0
 HR_ARGS=()
+DEFAULT_ARGS=()
 
 # $1: file
 compress() {
