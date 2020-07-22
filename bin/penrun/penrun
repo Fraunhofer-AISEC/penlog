@@ -224,6 +224,10 @@ main() {
     done
     shift $((OPTIND-1))
 
+    if (( $# < 1 )); then
+        echo "error: no command specified"
+    fi
+
     if [[ -n "$forced_config" ]]; then
         if [[ ! -f "$forced_config" ]]; then
             echo "error: config does not exist"
