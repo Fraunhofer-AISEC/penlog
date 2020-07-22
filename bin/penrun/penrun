@@ -206,6 +206,8 @@ main() {
 
     local artifactsdir
     local cd_in=0
+    local forced_config=""
+
     while getopts "c:dD:rh" arg; do
         case "$arg" in
             c) forced_config="$OPTARG";;
@@ -218,20 +220,6 @@ main() {
     done
     shift $((OPTIND-1))
 
-    local forced_config=""
-    local scriptname
-    scriptname="$(basename "$1")"
-
-    if [[ -z "${artifactsdir-}" ]]; then
-        artifactsdir="${scriptname%.*}/run-$(date +%Y%m%d-%H%M%S)"
-    fi
-    if ! isabsolute "$artifactsdir"; then
-        artifactsdir="$PWD/$artifactsdir"
-    fi
-
-    local rundir="$artifactsdir"
-    export PENRUN_ARTIFACTS="$artifactsdir"
-
     if [[ -n "$forced_config" ]]; then
         if [[ ! -f "$forced_config" ]]; then
             echo "error: config does not exist"
@@ -243,6 +231,19 @@ main() {
     else
         search_and_source_config
     fi
+
+    local scriptname
+    scriptname="$(basename "$1")"
+
+    if [[ -z "${artifactsdir-}" ]]; then
+        artifactsdir="${PENRUN_ARTIFACTS_BASE:-$PWD}/${scriptname%.*}/run-$(date +%Y%m%d-%H%M%S)"
+    fi
+    if ! isabsolute "$artifactsdir"; then
+        artifactsdir="$PWD/$artifactsdir"
+    fi
+
+    local rundir="$artifactsdir"
+    export PENRUN_ARTIFACTS="$artifactsdir"
 
     mkdir_if_not_exists "$rundir"
 
