@@ -78,7 +78,7 @@ func main() {
 	if opts.outfile == "-" {
 		outfile = os.Stdout
 	} else {
-		if s, err := os.Stat(opts.outfile); err != nil && s.Mode()&os.ModeNamedPipe != 0 {
+		if s, err := os.Stat(opts.outfile); err == nil && s.Mode()&os.ModeNamedPipe != 0 {
 			outfile, err = os.Open(opts.outfile)
 			if err != nil {
 				logger.LogCritical(err)
