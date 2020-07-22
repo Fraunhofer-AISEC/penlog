@@ -193,6 +193,7 @@ usage() {
     echo " -c FILE  Use this config file exclusively"
     echo " -d       Run COMMAND in artifactsdir"
     echo " -D DIR   Run COMMAND in artifactsdir DIR"
+    echo " -n       Do not use DEFAULT_ARGS from config"
     echo " -r       Produce readable penlog logs and pipe through 'hr'"
     echo " -h       Show this page and exit."
 }
@@ -205,14 +206,16 @@ main() {
 
     local artifactsdir
     local cd_in=0
+    local use_default_args=1
     local forced_config=""
 
-    while getopts "c:dD:rh" arg; do
+    while getopts "c:dD:nrh" arg; do
         case "$arg" in
             c) forced_config="$OPTARG";;
             r) HR=1;;
             d) cd_in=1;;
             D) cd_in=1; artifactsdir="$OPTARG";;
+            n) use_default_args=0;;
             h) usage && exit 0;;
             *) usage && exit 1;;
         esac
@@ -245,6 +248,10 @@ main() {
     export PENRUN_ARTIFACTS="$artifactsdir"
 
     mkdir_if_not_exists "$rundir"
+
+    if (( ! use_default_args )); then
+        DEFAULT_ARGS=()
+    fi
 
     if isfunction "pre_run"; then
         if ! run_hook "$rundir" "$cd_in" "pre_run"; then
