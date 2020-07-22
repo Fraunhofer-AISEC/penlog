@@ -20,12 +20,13 @@ import (
 var logger = penlog.NewLogger("penlog", os.Stderr)
 
 type runtimeOptions struct {
-	outfile     string
-	iface       string
-	filter      string
-	promiscuous bool
-	timeout     time.Duration
-	snaplen     int
+	outfile      string
+	iface        string
+	filter       string
+	promiscuous  bool
+	timeout      time.Duration
+	cleanupDelay time.Duration
+	snaplen      int
 }
 
 type dumper struct {
@@ -60,7 +61,8 @@ func main() {
 	pflag.StringVarP(&opts.filter, "filter", "f", "", "set bpf capture filter")
 	pflag.BoolVarP(&opts.promiscuous, "promiscuous", "p", true, "enable promiscuous on the interface")
 	pflag.DurationVarP(&opts.timeout, "timeout", "t", 1*time.Second, "set pcap timeout value (expert setting)")
-	pflag.IntVarP(&opts.snaplen, "snaplen", "s", 1600, "set pcap saplen value (expert setting)")
+	pflag.DurationVarP(&opts.cleanupDelay, "delay", "d", 2*time.Second, "wait this amount of seconds after termination signal")
+	pflag.IntVarP(&opts.snaplen, "snaplen", "s", 65535, "set pcap saplen value (expert setting)")
 	pflag.Parse()
 
 	var (
@@ -126,6 +128,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
+		time.Sleep(opts.cleanupDelay)
 		handle.Close()
 	}()
 
