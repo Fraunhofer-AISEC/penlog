@@ -207,15 +207,17 @@ main() {
     local artifactsdir
     local cd_in=0
     local use_default_args=1
+    local skip_hooks=0
     local forced_config=""
 
-    while getopts "c:dD:nrh" arg; do
+    while getopts "c:dD:nrsh" arg; do
         case "$arg" in
             c) forced_config="$OPTARG";;
             r) HR=1;;
             d) cd_in=1;;
             D) cd_in=1; artifactsdir="$OPTARG";;
             n) use_default_args=0;;
+            s) skip_hooks=1;;
             h) usage && exit 0;;
             *) usage && exit 1;;
         esac
@@ -253,7 +255,7 @@ main() {
         DEFAULT_ARGS=()
     fi
 
-    if isfunction "pre_run"; then
+    if (( ! skip_hooks )) && isfunction "pre_run"; then
         if ! run_hook "$rundir" "$cd_in" "pre_run"; then
             echo "error: pre_run hook failed"
             exit 1
@@ -262,7 +264,7 @@ main() {
 
     run_cmd "$rundir" "$cd_in" "$@"
 
-    if isfunction "post_run"; then
+    if (( ! skip_hooks )) && isfunction "post_run"; then
         if ! run_hook "$rundir" "$cd_in" "post_run"; then
             echo "error: post_run hook failed"
             exit 1
