@@ -137,6 +137,9 @@ PENRUN_COMPRESS_OUTPUT::
     If this variable is set to a non empty value, OUTPUT, PRERUN_OUTPUT, and POSTRUN_OUTPUT are compressed via gzip.
     If this variable is set to `gzip` or `zst`, the relevant compression algorithm is chosen.
 
+PENRUN_COMPRESS_THRESHOLD::
+    If this variable is set to an integer value (size in bytes), then PENRUN_COMPRESS_OUTPUT is only considered if the file is larger than the specified value in bytes.
+
 PENRUN_NO_CAPTURE::
     If this variable is set to a non empty value, do not create an OUTPUT file, since the user knows better.
 

@@ -16,6 +16,10 @@ compress() {
     if [[ -z "${PENRUN_COMPRESS_OUTPUT-}" ]]; then
         return 1
     fi
+    if [[ -n "${PENRUN_COMPRESS_THRESHOLD-}" ]] &&
+      (( "$(stat --printf %s "$f")" <= "$PENRUN_COMPRESS_THRESHOLD" )); then
+        return 1
+    fi
     local algorithm="$PENRUN_COMPRESS_OUTPUT"
 
     case "$algorithm" in
