@@ -196,8 +196,8 @@ usage() {
     echo ""
     echo "options:"
     echo " -c FILE  Use this config file exclusively"
-    echo " -d       Run COMMAND in artifactsdir"
-    echo " -D DIR   Run COMMAND in artifactsdir DIR"
+    echo " -d DIR   Use artifactsdir DIR"
+    echo " -D       Run COMMAND in artifactsdir"
     echo " -n       Do not use DEFAULT_ARGS from config"
     echo " -r       Produce readable penlog logs and pipe through 'hr'"
     echo " -h       Show this page and exit."
@@ -215,12 +215,12 @@ main() {
     local skip_hooks=0
     local forced_config=""
 
-    while getopts "c:dD:nrsh" arg; do
+    while getopts "c:d:Dnrsh" arg; do
         case "$arg" in
             c) forced_config="$OPTARG";;
             r) HR=1;;
-            d) cd_in=1;;
-            D) cd_in=1; artifactsdir="$OPTARG";;
+            d) artifactsdir="$OPTARG";;
+            D) cd_in=1;;
             n) use_default_args=0;;
             s) skip_hooks=1;;
             h) usage && exit 0;;
