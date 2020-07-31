@@ -1,15 +1,20 @@
 GO ?= go
 
-all: hr pendump
+all: hr pendump penrun
 
 hr:
 	$(GO) build $(GOFLAGS) -o $@ ./bin/$@/...
 
 pendump:
 	$(GO) build $(GOFLAGS) -o $@ ./bin/$@/...
+	@echo "!! capabilities for pendump needed !!"
+	@echo "\"make pendump-caps\" fixes this for you"
 
 pendump-caps: pendump
 	sudo setcap cap_dac_override,cap_net_admin,cap_net_raw+eip ./pendump
+
+penrun:
+	cp ./bin/$@/$@ .
 
 man:
 	$(MAKE) -C man
@@ -25,4 +30,4 @@ clean:
 	$(RM) hr
 	$(MAKE) -C man clean
 
-.PHONY: all hr pendump pendump-caps man update clitest clean
+.PHONY: all hr pendump pendump-caps penrun man update clitest clean

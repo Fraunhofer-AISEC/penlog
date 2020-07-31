@@ -1,5 +1,6 @@
 /hr
 /pendump
+/penrun
 *pcap
 *pcapng
 *pcap.gz
