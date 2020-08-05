@@ -192,7 +192,7 @@ run_cmd() {
 }
 
 usage() {
-    echo "$(basename "$0") [-rh] COMMAND"
+    echo "$(basename "$0") [-rsDh] [-c FILE] [-d DIR] [-t TAG] COMMAND"
     echo ""
     echo "options:"
     echo " -c FILE  Use this config file exclusively"
@@ -200,6 +200,8 @@ usage() {
     echo " -D       Run COMMAND in artifactsdir"
     echo " -n       Do not use DEFAULT_ARGS from config"
     echo " -r       Produce readable penlog logs and pipe through 'hr'"
+    echo " -s       Skip hooks"
+    echo " -t TAG   Add a tag to this run"
     echo " -h       Show this page and exit."
 }
 
@@ -214,6 +216,7 @@ main() {
     local use_default_args=1
     local skip_hooks=0
     local forced_config=""
+    local tag=""
 
     while getopts "c:d:Dnrsh" arg; do
         case "$arg" in
@@ -223,6 +226,7 @@ main() {
             D) cd_in=1;;
             n) use_default_args=0;;
             s) skip_hooks=1;;
+            t) tag="$OPTARG";;
             h) usage && exit 0;;
             *) usage && exit 1;;
         esac
@@ -248,6 +252,9 @@ main() {
     local scriptname
     scriptname="$(basename "$1")"
 
+    if [[ -n "$tag" ]]; then
+        scriptname="$scriptname-$tag"
+    fi
     if [[ -z "${artifactsdir-}" ]]; then
         artifactsdir="${PENRUN_ARTIFACTS_BASE:-$PWD}/${scriptname%.*}/run-$(date +%Y%m%d-%H%M%S)"
     fi
