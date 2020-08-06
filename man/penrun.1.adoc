@@ -4,7 +4,7 @@
 
 == Name
 
-pendump - A configurable runner for commands which create artifacts
+penrun - A configurable runner for commands which create artifacts
 
 == Synopsis
 
@@ -18,6 +18,37 @@ penrun(1) is a runner intended for invoking measurements; any shellcommand can b
 A well defined directory structure is created for the so called "artifacts".
 COMMAND is run within this directory which is there for any results (e.g. pcap files, penlog artifacts, …).
 For more information about the artifacts directory, see the ARTIFACTS section.
+
+== Arguments
+
+The following arguments are understood by penrun.
+
+-c FILE::
+    Source the config file `FILE` instead searching in the known paths.
+
+-d DIR::
+    Use `DIR` for all artifacts instead of creating a new one.
+
+-D::
+    Run `COMMAND` **in** the artifacts directory.
+    Technically, a subshell with the current working directory set to the artifactsdir is spawned.
+
+-n::
+    Ignore the `DEFAULT_ARGS` from the config.
+
+-r::
+    In case the spawned `COMMAND` logs using the penlog format, then pipe the output through `hr`.
+
+-s::
+    Do not run any hooks this time.
+
+-t TAG::
+    Adds a suffix to the artifactsdir.
+    If the COMMAND is `ls` and tag is `foo` then the artifactsdir might be `ls-foo/run-20200806-113712`.
+
+-h::
+    Show the usage help page and exit
+
 
 == Customization
 === Config Files
