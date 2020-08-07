@@ -237,6 +237,8 @@ main() {
         echo "error: no command specified"
     fi
 
+    export PENRUN_COMMAND="$*"
+
     if [[ -n "$forced_config" ]]; then
         if [[ ! -f "$forced_config" ]]; then
             echo "error: config does not exist"

@@ -161,6 +161,9 @@ PENRUN_ARTIFACTS::
     This variable is set by penrun to the current artifactsdir.
     Spawned programs can use this variable to locate the current artifactsdir to store further artifacts on their own.
 
+PENRUN_COMMAND::
+    This variable includes the full command provided to penrun; excluding DEFAULT_ARGS.
+
 PENRUN_ARTIFACTS_BASE::
     If this variable is set then penrun creates the artificts folder hierarchy at this location instead of $PWD.
 
