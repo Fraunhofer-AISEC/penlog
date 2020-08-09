@@ -280,7 +280,9 @@ main() {
         fi
     fi
 
+    local ret
     run_cmd "$rundir" "$cd_in" "$@"
+    ret="$?"
 
     if (( ! skip_hooks )) && isfunction "post_run"; then
         if ! run_hook "$rundir" "$cd_in" "post_run"; then
@@ -288,6 +290,8 @@ main() {
             exit 1
         fi
     fi
+
+    return "$ret"
 }
 
 main "$@"
