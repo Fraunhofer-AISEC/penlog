@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var logger = penlog.NewLogger("penlog", os.Stderr)
+var logger = penlog.NewLogger("pendump", os.Stderr)
 
 type runtimeOptions struct {
 	outfile      string
