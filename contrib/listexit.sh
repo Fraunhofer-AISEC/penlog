@@ -14,6 +14,17 @@ get_exit() {
     return 1
 }
 
+fix_symlink() {
+    local dir
+    local runs
+    dir="$1"
+
+    runs=("$(find "$dir" -maxdepth 1 -type d -name "run-*" | sort -r)")
+    if (( "${#runs}" > 0 )); then
+        ln -sfnr "${runs[0]}" "LATEST"
+    fi
+}
+
 usage() {
     echo "usage: $(basename "$BASH_ARGV0") [-rih] [DIR]"
     echo ""
@@ -38,12 +49,12 @@ main() {
 
     shift $((OPTIND-1))
 
-    local dir="$PWD"
+    local base="$PWD"
     if (( $# >= 1 )); then
-        dir="$1"
+        base="$1"
     fi
 
-    for dir in "$dir/run-"*; do
+    for dir in "$base/run-"*; do
         local meta
         local code
         meta="$dir/META"
@@ -59,6 +70,8 @@ main() {
             echo "exit code '$dir': $code"
         fi
     done
+
+    fix_symlink "$base"
 }
 
 main "$@"
