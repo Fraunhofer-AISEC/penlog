@@ -26,12 +26,12 @@ type runtimeOptions struct {
 	promiscuous  bool
 	timeout      time.Duration
 	cleanupDelay time.Duration
-	snaplen      int
+	snaplen      uint32
 }
 
 type dumper struct {
 	handle  *pcap.Handle
-	writer  *pcapgo.NgWriter
+	writer  *pcapgo.Writer
 	gzipper *gzip.Writer
 	file    *os.File
 }
@@ -46,7 +46,6 @@ func (d *dumper) run() {
 		}
 	}
 
-	d.writer.Flush()
 	if d.gzipper != nil {
 		d.gzipper.Flush()
 		d.gzipper.Close()
@@ -62,7 +61,7 @@ func main() {
 	pflag.BoolVarP(&opts.promiscuous, "promiscuous", "p", true, "enable promiscuous on the interface")
 	pflag.DurationVarP(&opts.timeout, "timeout", "t", 1*time.Second, "set pcap timeout value (expert setting)")
 	pflag.DurationVarP(&opts.cleanupDelay, "delay", "d", 2*time.Second, "wait this amount of seconds after termination signal")
-	pflag.IntVarP(&opts.snaplen, "snaplen", "s", 65535, "set pcap saplen value (expert setting)")
+	pflag.Uint32VarP(&opts.snaplen, "snaplen", "s", 65535, "set pcap saplen value (expert setting)")
 	pflag.Parse()
 
 	var (
@@ -116,7 +115,8 @@ func main() {
 		outWriter = outfile
 	}
 
-	pcapw, err := pcapgo.NewNgWriter(outWriter, handle.LinkType())
+	pcapw := pcapgo.NewWriter(outWriter)
+	pcapw.WriteFileHeader(opts.snaplen, handle.LinkType())
 	if err != nil {
 		logger.LogCritical(err)
 		os.Exit(1)
