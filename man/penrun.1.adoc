@@ -156,13 +156,7 @@ If hooks are run, their output is stored in PRERUN_OUTPUT and POSTRUN_OUTPUT.
         └── OUTPUT
 
 == Environment Variables
-
-PENRUN_ARTIFACTS::
-    This variable is set by penrun to the current artifactsdir.
-    Spawned programs can use this variable to locate the current artifactsdir to store further artifacts on their own.
-
-PENRUN_COMMAND::
-    This variable includes the full command provided to penrun; excluding DEFAULT_ARGS.
+=== Set by User
 
 PENRUN_ARTIFACTS_BASE::
     If this variable is set then penrun creates the artificts folder hierarchy at this location instead of $PWD.
@@ -179,6 +173,15 @@ PENRUN_NO_CAPTURE::
 
 PENRUN_NO_HOOK_CAPTURE::
     If this variable is set to a non empty value, do not create PRERUN_OUTPUT and POSTRUN_OUTPUT files, since the user knows better.
+
+=== Set by penrun
+
+PENRUN_ARTIFACTS::
+    This variable is set by penrun to the current artifactsdir.
+    Spawned programs can use this variable to locate the current artifactsdir to store further artifacts on their own.
+
+PENRUN_COMMAND::
+    This variable includes the full command provided to penrun; excluding DEFAULT_ARGS.
 
 PENRUN_PWD_CONF::
 PENRUN_GIT_ROOT_CONF::
