@@ -5,6 +5,8 @@ set -o pipefail
 
 HR=0
 HR_ARGS=()
+HR_HOOKS=0
+HR_HOOKS_ARGS=()
 DEFAULT_ARGS=()
 
 # $1: file
@@ -144,10 +146,18 @@ run_hook() {
         if (( cd_in )); then
             cd "$artifactsdir" || exit
         fi
-        if [[ -n "${PENRUN_NO_HOOK_CAPTURE-}" ]]; then
-            "$@"
+        if (( HR_HOOKS )); then
+            if [[ -n "${PENRUN_NO_HOOK_CAPTURE-}" ]]; then
+                "$@" | hr "${HR_HOOKS_ARGS[@]}"
+            else
+                "$@" | tee "$raw_out" | "${HR_HOOKS_ARGS[@]}"
+            fi
         else
-            "$@" | tee "$raw_out"
+            if [[ -n "${PENRUN_NO_HOOK_CAPTURE-}" ]]; then
+                "$@"
+            else
+                "$@" | tee "$raw_out"
+            fi
         fi
     )
 }
@@ -172,8 +182,9 @@ run_cmd() {
         fi
         printenv > "$envfile"
         meta_create "$artifactsdir" "$* ${DEFAULT_ARGS[*]}"
+        ln -sfnr "$artifactsdir" "$latest"
 
-        trap 'meta_end $artifactsdir $? && ln -sfnr $artifactsdir $latest && compress $raw_out' EXIT
+        trap 'meta_end $artifactsdir $? && compress $raw_out' EXIT
 
         if (( HR )); then
             if [[ -n "${PENRUN_NO_CAPTURE-}" ]]; then
