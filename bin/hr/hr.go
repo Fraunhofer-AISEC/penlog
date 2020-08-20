@@ -152,12 +152,13 @@ func (c *converter) printError(msg string) {
 
 func (c *converter) transform(r io.Reader) {
 	var (
-		err     error
-		jq      *exec.Cmd
-		scanner = bufio.NewScanner(r)
+		err      error
+		jq       *exec.Cmd
+		jsonLine []byte
+		reader   = bufio.NewReader(r)
 	)
 	if c.jq != "" {
-		scanner, jq, err = createJQ(r, c.jq)
+		reader, jq, err = createJQ(r, c.jq)
 		if err != nil {
 			panic(err)
 		}
@@ -166,78 +167,80 @@ func (c *converter) transform(r io.Reader) {
 			jq.Wait()
 		}()
 	}
-	for scanner.Scan() {
-		if jsonLine := scanner.Bytes(); len(bytes.TrimSpace(jsonLine)) > 0 {
-			var (
-				data         map[string]interface{}
-				deferredCont = false
-			)
-			if err := json.Unmarshal(jsonLine, &data); err != nil {
-				c.printError(string(jsonLine))
-				deferredCont = true
-				// If there are workers avail, send
-				// the error to them as well. The error
-				// needs to be included in the logfiles
-				// as well.
-				data = createErrorRecord(string(jsonLine))
+	for !errors.Is(err, io.EOF) {
+		jsonLine, err = reader.ReadBytes('\n')
+		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				c.printError(err.Error())
 			}
-			if c.workers > 0 {
-				c.mutex.Lock()
-				// Avoid sends on closed channel by signal handler.
-				if c.cleanedUp {
-					c.mutex.Unlock()
-					break
-				}
-				d := copyData(data)
-				c.broadcastCh <- d
+			continue
+		}
+		var (
+			data         map[string]interface{}
+			deferredCont = false
+		)
+		if err := json.Unmarshal(jsonLine, &data); err != nil {
+			c.printError(string(jsonLine))
+			deferredCont = true
+			// If there are workers avail, send
+			// the error to them as well. The error
+			// needs to be included in the logfiles
+			// as well.
+			data = createErrorRecord(string(jsonLine))
+		}
+		if c.workers > 0 {
+			c.mutex.Lock()
+			// Avoid sends on closed channel by signal handler.
+			if c.cleanedUp {
 				c.mutex.Unlock()
+				break
 			}
-			if deferredCont {
-				deferredCont = false
+			d := copyData(data)
+			c.broadcastCh <- d
+			c.mutex.Unlock()
+		}
+		if deferredCont {
+			deferredCont = false
+			continue
+		}
+
+		var (
+			err error
+			d   = copyData(data)
+		)
+		if c.stdoutFilter != nil {
+			d, err = c.stdoutFilter.filter(d)
+			if err != nil {
+				c.printError(string(jsonLine))
 				continue
 			}
-
-			var (
-				err error
-				d   = copyData(data)
-			)
-			if c.stdoutFilter != nil {
-				d, err = c.stdoutFilter.filter(d)
-				if err != nil {
-					c.printError(string(jsonLine))
-					continue
-				}
-				if d == nil {
-					continue
-				}
-			}
-			if prio, ok := d["priority"]; ok {
-				if p, ok := prio.(float64); ok {
-					if penlog.Prio(p) > c.logLevel {
-						continue
-					}
-				}
-			}
-			if idRaw, ok := d["id"]; ok && c.id != "" {
-				if id, ok := idRaw.(string); ok {
-					if id != c.id {
-						continue
-					}
-				}
-			}
-			if hrLine, err := c.formatter.Format(d); err == nil {
-				fmt.Println(hrLine)
-			} else {
-				if errors.Is(err, errInvalidData) {
-					c.printError(err.Error())
-					continue
-				}
-				c.printError(scanner.Text())
+			if d == nil {
+				continue
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		c.printError(err.Error())
+		if prio, ok := d["priority"]; ok {
+			if p, ok := prio.(float64); ok {
+				if penlog.Prio(p) > c.logLevel {
+					continue
+				}
+			}
+		}
+		if idRaw, ok := d["id"]; ok && c.id != "" {
+			if id, ok := idRaw.(string); ok {
+				if id != c.id {
+					continue
+				}
+			}
+		}
+		if hrLine, err := c.formatter.Format(d); err == nil {
+			fmt.Println(hrLine)
+		} else {
+			if errors.Is(err, errInvalidData) {
+				c.printError(err.Error())
+				continue
+			}
+			c.printError(string(jsonLine))
+		}
 	}
 }
 
@@ -277,7 +280,7 @@ func (c *converter) fileWorker(wg *sync.WaitGroup, data chan map[string]interfac
 	wg.Done()
 }
 
-func createJQ(r io.Reader, filter string) (*bufio.Scanner, *exec.Cmd, error) {
+func createJQ(r io.Reader, filter string) (*bufio.Reader, *exec.Cmd, error) {
 	cmd := exec.Command("jq", "-c", "--unbuffered", filter)
 	cmd.Stderr = os.Stderr
 	jqOut, err := cmd.StdoutPipe()
@@ -315,7 +318,7 @@ func createJQ(r io.Reader, filter string) (*bufio.Scanner, *exec.Cmd, error) {
 		}
 		jqIn.Close()
 	}()
-	return bufio.NewScanner(jqOut), cmd, nil
+	return bufio.NewReader(jqOut), cmd, nil
 }
 
 func main() {
