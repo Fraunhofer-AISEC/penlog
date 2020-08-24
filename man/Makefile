@@ -18,16 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-ASCIIDOC            = asciidoctor
-ASCIIDOC_MAN        = asciidoctor
-ASCIIDOC_MAN_FLAGS  = -d manpage -b manpage
-ASCIIDOC_HTML_FLAGS =
-
-MAN_ADOCS = $(wildcard *.1.adoc) $(wildcard *.7.adoc)
-DOC_MAN   = $(patsubst %.adoc,%,$(MAN_ADOCS))
-DOC_HTML   = $(patsubst %.adoc,%.html,$(MAN1_ADOCS))
-INCLUDES   = footer.adoc
-CSS        =
+MAN_MDS  = $(wildcard *.1.md) $(wildcard *.7.md)
+DOC_MAN  = $(patsubst %.md,%,$(MAN_MDS))
+DOC_HTML = $(patsubst %.md,%.html,$(MAN_MDS))
+INCLUDES = footer.md
 
 all: html man
 
@@ -38,10 +32,14 @@ man: $(DOC_MAN)
 clean:
 	$(RM) *.1 *.7 *.html
 
-% : %.adoc $(INCLUDES)
-	$(ASCIIDOC_MAN) $(ASCIIDOC_MAN_FLAGS) $<
+% : %.md $(INCLUDES)
+	cat $< $(INCLUDES) > /tmp/concat.md
+	pandoc --standalone --to man -o $@ /tmp/concat.md
+	$(RM) /tmp/concat.md
 
-%.html : %.adoc $(INCLUDES) $(CSS)
-	$(ASCIIDOC) $(ASCIIDOC_HTML_FLAGS) $<
+%.html : %.md $(INCLUDES)
+	cat $< $(INCLUDES) > /tmp/concat.md
+	pandoc --standalone --to html -o $@ /tmp/concat.md
+	$(RM) /tmp/concat.md
 
-.PHONY: clean
+.PHONY: clean man html

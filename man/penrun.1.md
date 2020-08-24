@@ -85,6 +85,12 @@ DEFAULT_ARGS (array)::
     These arguments are prepended to the arguments of COMMAND.
     If COMMAND is `ls -lah` and DEFAULT_ARGS is `(--foo --bar)`, then the following command is invoked: `ls --foo --bar -lah`.
 
+TODO
+HR (bool)::
+HR_ARGS (bool)::
+HR_HOOKS (bool)::
+HR_HOOKS_ARGS (bool)::
+
 === Hooks
 
 Hook functions can be defined as ordinary shell functions.
@@ -188,6 +194,10 @@ PENRUN_GIT_ROOT_CONF::
 PENRUN_USER_CONF::
 PENRUN_GLOBAL_CONF::
     These variables are set if the appropriate config exists (see CUSTOMIZATION).
+
+== Exit Codes
+
+TODO
 
 == See Also
 
