@@ -20,6 +20,7 @@ setup() {
 	expected_prio_critical="$(< hr/example-level-critical.log)"
 	expected_prio_alert="$(< hr/example-level-alert.log)"
 	expected_prio_emergency="$(< hr/example-level-emergency.log)"
+	data_with_error="$(< hr/example-with-error.log.json)"
 }
 
 @test "data from pipe to stdout" {
@@ -119,5 +120,13 @@ setup() {
 
 	out="$(echo hans | hr)"
 	# Strip prefix, as the timestamp is not reproducible.
-	compstr "$(echo $out | sed -e 's/.*: //')" "hans"
+	compstr "$(echo $out | striptimestamp)" "hans"
+}
+
+@test "data with an error" {
+    local out
+
+	# Strip prefix, as the timestamp is not reproducible.
+    out="$(hr hr/example-with-error.log.json | striptimestamp)"
+    compstr "$out" "$(cat hr/expected-with-error.log | striptimestamp)"
 }

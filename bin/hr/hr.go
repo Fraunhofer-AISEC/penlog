@@ -147,7 +147,7 @@ func fPrintError(w io.Writer, msg string) {
 func (c *converter) printError(msg string) {
 	line := createErrorRecord(msg)
 	str, _ := c.formatter.Format(line)
-	fmt.Println(str)
+	fmt.Print(str)
 }
 
 func (c *converter) transform(r io.Reader) {
