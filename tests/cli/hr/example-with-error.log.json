@@ -1,0 +1,10 @@
+{"type": "summary", "data": "vT", "component": "scanner", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542089"}
+{"type": "summary", "data": "fRWb15PH59RWyKgF", "component": "scanner", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542123"}
+{"type": "summary", "data": "Iaf)v]}C?pYqa4rPgtykU[Rro", "component": "scanner", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542172"}
+{"type": "summary", "data": "DYaJeRQOQb2k)XeAkSCNmnHoY", "component": "scanner", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542209"}
+{"type": "summary", "data": "?w", "component": "scanner", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542244"}
+{"type": "summary", "data": "aC", "component": "scanner", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542279"}
+{"type": "summary", "data": ":YO]t3wwM*6PaBy1GvIVBrim8zR", "component": "scanner", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542313"}
+{"type": "info", "data": "odKT9pR5Qe6DuUL?x0Hen8tBXgBTO", "component": "mcpipe", "host": "kronos", "timestamp": "2020-04-23T15:27:08.542367"}
+This is a multiline
+error.
