@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -22,9 +21,12 @@ import (
 
 	"git.sr.ht/~rumpelsepp/helpers"
 	"github.com/Fraunhofer-AISEC/penlog"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/pflag"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var (
 	errInvalidData = errors.New("Invalid data")
