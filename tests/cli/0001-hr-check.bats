@@ -116,17 +116,13 @@ setup() {
 }
 
 @test "pipe arbitrary data through hr" {
-	local out
-
-	out="$(echo hans | hr)"
-	# Strip prefix, as the timestamp is not reproducible.
-	compstr "$(echo $out | striptimestamp)" "hans"
+	compstr "$(echo hans | hr)" "0000000000000000000 {JSON    } [ERROR   ]: hans"
 }
 
 @test "data with an error" {
     local out
 
 	# Strip prefix, as the timestamp is not reproducible.
-    out="$(hr hr/example-with-error.log.json | striptimestamp)"
-    compstr "$out" "$(cat hr/expected-with-error.log | striptimestamp)"
+    out="$(hr hr/example-with-error.log.json)"
+    compstr "$out" "$(< hr/expected-with-error.log)"
 }

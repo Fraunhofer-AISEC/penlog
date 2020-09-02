@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/klauspost/compress/zstd"
 	"golang.org/x/sys/unix"
@@ -43,7 +42,7 @@ func castField(data map[string]interface{}, field string) (string, error) {
 
 func createErrorRecord(msg string) map[string]interface{} {
 	var record = map[string]interface{}{
-		"timestamp": time.Now().Format("2006-01-02T15:04:05.000000"),
+		"timestamp": "NONE",
 		"data":      msg,
 		"component": "JSON",
 		"type":      "ERROR",

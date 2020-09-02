@@ -27,7 +27,3 @@ compjson() {
 	return 0
 }
 
-# reads from stdin
-striptimestamp() {
-    sed -e 's/.*: //'
-}
