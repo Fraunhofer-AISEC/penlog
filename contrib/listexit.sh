@@ -19,7 +19,7 @@ fix_symlink() {
     local runs
     dir="$1"
 
-    runs=("$(find "$dir" -maxdepth 1 -type d -name "run-*" | sort -r)")
+    mapfile -t runs < <(find "$dir" -maxdepth 1 -type d -name "run-*" | sort -r)
     if (( "${#runs}" > 0 )); then
         ln -sfnr "${runs[0]}" "LATEST"
     fi
@@ -71,7 +71,9 @@ main() {
         fi
     done
 
-    fix_symlink "$base"
+    if (( remove )); then
+        fix_symlink "$base"
+    fi
 }
 
 main "$@"
