@@ -264,12 +264,15 @@ main() {
 
     local scriptname
     scriptname="$(basename "$1")"
+    # Strip the fileending here, otherwise a
+    # tag might be stripped as well.
+    scriptname="${scriptname%.*}"
 
     if [[ -n "$tag" ]]; then
         scriptname="$scriptname-$tag"
     fi
     if [[ -z "${artifactsdir-}" ]]; then
-        artifactsdir="${PENRUN_ARTIFACTS_BASE:-$PWD}/${scriptname%.*}/run-$(date +%Y%m%d-%H%M%S)"
+        artifactsdir="${PENRUN_ARTIFACTS_BASE:-$PWD}/${scriptname}/run-$(date +%Y%m%d-%H%M%S)"
     fi
     if ! isabsolute "$artifactsdir"; then
         artifactsdir="$PWD/$artifactsdir"
