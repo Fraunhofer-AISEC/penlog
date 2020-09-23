@@ -246,6 +246,7 @@ main() {
 
     if (( $# < 1 )); then
         echo "error: no command specified"
+        exit 1
     fi
 
     export PENRUN_COMMAND="$*"
