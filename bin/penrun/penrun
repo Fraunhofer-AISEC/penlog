@@ -252,7 +252,7 @@ main() {
     export PENRUN_COMMAND="$*"
 
     if [[ -n "$forced_config" ]]; then
-        if [[ ! -f "$forced_config" ]]; then
+        if [[ ! -f "$forced_config" && "$forced_config" != "/dev/null" ]]; then
             echo "error: config does not exist"
             exit 1
         fi
