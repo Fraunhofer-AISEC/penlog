@@ -7,7 +7,7 @@ load lib-helpers
     tmpdir="$(mktemp -d)"
     (
         cd "$tmpdir"
-        penrun ls -lah
+        penrun -c /dev/null ls -lah
         if [[ ! -d "ls" ]]; then
             echo "output directory is missing"
             return 1
