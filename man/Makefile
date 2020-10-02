@@ -25,7 +25,7 @@ ASCIIDOC_HTML_FLAGS =
 
 MAN_ADOCS = $(wildcard *.1.adoc) $(wildcard *.7.adoc)
 DOC_MAN   = $(patsubst %.adoc,%,$(MAN_ADOCS))
-DOC_HTML   = $(patsubst %.adoc,%.html,$(MAN1_ADOCS))
+DOC_HTML   = $(patsubst %.adoc,%.html,$(MAN_ADOCS))
 INCLUDES   = footer.adoc
 CSS        =
 

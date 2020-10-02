@@ -13,11 +13,14 @@ pendump:
 pendump-caps: pendump
 	sudo setcap cap_dac_override,cap_net_admin,cap_net_raw+eip ./pendump
 
-penrun:
+penrun : bin/penrun/penrun
 	cp ./bin/$@/$@ .
 
 man:
-	$(MAKE) -C man
+	$(MAKE) -C man man
+
+html:
+	$(MAKE) -C man html
 
 update:
 	$(GO) get -u ./bin/...
