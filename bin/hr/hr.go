@@ -45,6 +45,7 @@ type converter struct {
 	stdoutFilter *filter
 	jq           string
 	id           string
+	showProgress bool
 
 	cleanedUp   bool
 	workers     int
@@ -220,9 +221,14 @@ func (c *converter) transform(r io.Reader) {
 				continue
 			}
 		}
+
+		var (
+			priority penlog.Prio
+		)
 		if prio, ok := d["priority"]; ok {
 			if p, ok := prio.(float64); ok {
-				if penlog.Prio(p) > c.logLevel {
+				priority = penlog.Prio(p)
+				if priority > c.logLevel {
 					continue
 				}
 			}
@@ -235,7 +241,16 @@ func (c *converter) transform(r io.Reader) {
 			}
 		}
 		if hrLine, err := c.formatter.Format(d); err == nil {
-			fmt.Println(hrLine)
+			if isatty(uintptr(syscall.Stdout)) {
+				// If in progress mode override infos in the same line
+				if priority == penlog.PrioInfo && c.showProgress {
+					fmt.Print("\033[2K" + hrLine + "\r")
+				} else {
+					fmt.Println("\033[2K" + hrLine)
+				}
+			} else {
+				fmt.Println(hrLine)
+			}
 		} else {
 			if errors.Is(err, errInvalidData) {
 				c.printError(err.Error())
@@ -351,6 +366,7 @@ func main() {
 	pflag.BoolVar(&conv.formatter.TinyFormat, "tiny", false, "use penlog hr-tiny format")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
+	pflag.BoolVar(&conv.showProgress, "show-progress", false, "replace the consecutive displayment of info messages with a progress bar")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
 	pflag.Parse()
 
