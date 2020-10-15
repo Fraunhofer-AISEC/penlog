@@ -45,6 +45,7 @@ type converter struct {
 	stdoutFilter *filter
 	jq           string
 	id           string
+	volatileInfo bool
 
 	cleanedUp   bool
 	workers     int
@@ -154,10 +155,11 @@ func (c *converter) printError(msg string) {
 
 func (c *converter) transform(r io.Reader) {
 	var (
-		err      error
-		jq       *exec.Cmd
-		jsonLine []byte
-		reader   = bufio.NewReader(r)
+		err         error
+		jq          *exec.Cmd
+		jsonLine    []byte
+		reader      = bufio.NewReader(r)
+		cursorReset = false
 	)
 	if c.jq != "" {
 		reader, jq, err = createJQ(r, c.jq)
@@ -220,9 +222,13 @@ func (c *converter) transform(r io.Reader) {
 				continue
 			}
 		}
+
+		var priority penlog.Prio
+
 		if prio, ok := d["priority"]; ok {
 			if p, ok := prio.(float64); ok {
-				if penlog.Prio(p) > c.logLevel {
+				priority = penlog.Prio(p)
+				if priority > c.logLevel {
 					continue
 				}
 			}
@@ -235,7 +241,23 @@ func (c *converter) transform(r io.Reader) {
 			}
 		}
 		if hrLine, err := c.formatter.Format(d); err == nil {
-			fmt.Println(hrLine)
+			if c.volatileInfo && isatty(uintptr(syscall.Stdout)) {
+				// If the cursor has been reset, the line has to be cleared before new content can be written
+				if cursorReset {
+					fmt.Print(clearLine)
+				}
+				fmt.Print(hrLine)
+				// If in volatile info mode override infos in the same line
+				if priority == penlog.PrioInfo {
+					fmt.Print("\r")
+					cursorReset = true
+				} else {
+					fmt.Println()
+					cursorReset = false
+				}
+			} else {
+				fmt.Println(hrLine)
+			}
 		} else {
 			if errors.Is(err, errInvalidData) {
 				c.printError(err.Error())
@@ -243,6 +265,9 @@ func (c *converter) transform(r io.Reader) {
 			}
 			c.printError(string(jsonLine))
 		}
+	}
+	if cursorReset {
+		fmt.Println()
 	}
 }
 
@@ -351,6 +376,7 @@ func main() {
 	pflag.BoolVar(&conv.formatter.TinyFormat, "tiny", false, "use penlog hr-tiny format")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
+	pflag.BoolVar(&conv.volatileInfo, "volatile-info", false, "Overwrite info messages in the same line")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
 	pflag.Parse()
 
