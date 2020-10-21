@@ -45,7 +45,7 @@ type converter struct {
 	stdoutFilter *filter
 	jq           string
 	id           string
-	showProgress bool
+	volatileInfo bool
 
 	cleanedUp   bool
 	workers     int
@@ -222,9 +222,8 @@ func (c *converter) transform(r io.Reader) {
 			}
 		}
 
-		var (
-			priority penlog.Prio
-		)
+		var priority penlog.Prio
+
 		if prio, ok := d["priority"]; ok {
 			if p, ok := prio.(float64); ok {
 				priority = penlog.Prio(p)
@@ -242,11 +241,12 @@ func (c *converter) transform(r io.Reader) {
 		}
 		if hrLine, err := c.formatter.Format(d); err == nil {
 			if isatty(uintptr(syscall.Stdout)) {
-				// If in progress mode override infos in the same line
-				if priority == penlog.PrioInfo && c.showProgress {
-					fmt.Print("\033[2K" + hrLine + "\r")
+				fmt.Printf("%s%s", clearLine, hrLine)
+				// If in volatile info mode override infos in the same line
+				if priority == penlog.PrioInfo && c.volatileInfo {
+					fmt.Print("\r")
 				} else {
-					fmt.Println("\033[2K" + hrLine)
+					fmt.Println()
 				}
 			} else {
 				fmt.Println(hrLine)
@@ -366,7 +366,7 @@ func main() {
 	pflag.BoolVar(&conv.formatter.TinyFormat, "tiny", false, "use penlog hr-tiny format")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
-	pflag.BoolVar(&conv.showProgress, "show-progress", false, "replace the consecutive displayment of info messages with a progress bar")
+	pflag.BoolVar(&conv.volatileInfo, "volatile-info", false, "Overwrite info messages in the same line")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
 	pflag.Parse()
 

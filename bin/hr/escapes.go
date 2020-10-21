@@ -17,6 +17,7 @@ const (
 	colorCyan   = "\033[36m"
 	colorWhite  = "\033[37m"
 	colorGray   = "\033[0;38;5;245m"
+	clearLine   = "\033[2K"
 )
 
 func colorize(color, s string) string {
