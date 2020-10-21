@@ -155,10 +155,11 @@ func (c *converter) printError(msg string) {
 
 func (c *converter) transform(r io.Reader) {
 	var (
-		err      error
-		jq       *exec.Cmd
-		jsonLine []byte
-		reader   = bufio.NewReader(r)
+		err         error
+		jq          *exec.Cmd
+		jsonLine    []byte
+		reader      = bufio.NewReader(r)
+		needNewLine = false
 	)
 	if c.jq != "" {
 		reader, jq, err = createJQ(r, c.jq)
@@ -245,8 +246,10 @@ func (c *converter) transform(r io.Reader) {
 				// If in volatile info mode override infos in the same line
 				if priority == penlog.PrioInfo {
 					fmt.Print("\r")
+					needNewLine = true
 				} else {
 					fmt.Println()
+					needNewLine = false
 				}
 			} else {
 				fmt.Println(hrLine)
@@ -258,6 +261,9 @@ func (c *converter) transform(r io.Reader) {
 			}
 			c.printError(string(jsonLine))
 		}
+	}
+	if needNewLine {
+		fmt.Println()
 	}
 }
 
