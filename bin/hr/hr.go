@@ -240,10 +240,10 @@ func (c *converter) transform(r io.Reader) {
 			}
 		}
 		if hrLine, err := c.formatter.Format(d); err == nil {
-			if isatty(uintptr(syscall.Stdout)) {
+			if c.volatileInfo && isatty(uintptr(syscall.Stdout)) {
 				fmt.Printf("%s%s", clearLine, hrLine)
 				// If in volatile info mode override infos in the same line
-				if priority == penlog.PrioInfo && c.volatileInfo {
+				if priority == penlog.PrioInfo {
 					fmt.Print("\r")
 				} else {
 					fmt.Println()
