@@ -2,7 +2,7 @@
 # $2: expected data
 compstr() {
 	if [[ "$1" != "$2" ]]; then
-		echo "Exected string:"
+		echo "Expected string:"
 		echo "$2" | hexdump -C | head
 		echo "Got string:"
 		echo "$1" | hexdump -C | head
@@ -18,7 +18,7 @@ compjson() {
     expected="$(echo "$2" | jq -cS '.')"
 
 	if [[ "$data" != "$expected" ]]; then
-		echo "Exected data:"
+		echo "Expected data:"
 		echo "$data" | hexdump -C | head
 		echo "Got data:"
 		echo "$expected" | hexdump -C | head

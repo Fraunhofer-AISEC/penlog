@@ -159,7 +159,7 @@ func (c *converter) transform(r io.Reader) {
 		jq          *exec.Cmd
 		jsonLine    []byte
 		reader      = bufio.NewReader(r)
-		needNewLine = false
+		cursorReset = false
 	)
 	if c.jq != "" {
 		reader, jq, err = createJQ(r, c.jq)
@@ -242,14 +242,18 @@ func (c *converter) transform(r io.Reader) {
 		}
 		if hrLine, err := c.formatter.Format(d); err == nil {
 			if c.volatileInfo && isatty(uintptr(syscall.Stdout)) {
-				fmt.Printf("%s%s", clearLine, hrLine)
+				// If the cursor has been reset, the line has to be cleared before new content can be written
+				if cursorReset {
+					fmt.Print(clearLine)
+				}
+				fmt.Print(hrLine)
 				// If in volatile info mode override infos in the same line
 				if priority == penlog.PrioInfo {
 					fmt.Print("\r")
-					needNewLine = true
+					cursorReset = true
 				} else {
 					fmt.Println()
-					needNewLine = false
+					cursorReset = false
 				}
 			} else {
 				fmt.Println(hrLine)
@@ -262,7 +266,7 @@ func (c *converter) transform(r io.Reader) {
 			c.printError(string(jsonLine))
 		}
 	}
-	if needNewLine {
+	if cursorReset {
 		fmt.Println()
 	}
 }
