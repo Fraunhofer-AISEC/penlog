@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -55,6 +56,63 @@ func (d *dumper) run() {
 	d.file.Close()
 }
 
+func parseRawBPF(raw string) ([]pcap.BPFInstruction, error) {
+	var (
+		rawInstrs = strings.Split(raw, ",")
+		instrs    []pcap.BPFInstruction
+	)
+
+	for i, rawInstr := range rawInstrs {
+		// The first number is the length. We do not need it.
+		if i == 0 {
+			continue
+		}
+
+		rawInstr = strings.TrimSpace(rawInstr)
+		// The bpf_asm appends a comma to the string.
+		// Skip this case.
+		if rawInstr == "" {
+			continue
+		}
+
+		var (
+			ops  = strings.SplitN(rawInstr, " ", 4)
+			code uint64
+			jt   uint64
+			jf   uint64
+			k    uint64
+			err  error
+		)
+		if len(ops) != 4 {
+			return nil, fmt.Errorf("invalid BPF byte code")
+		}
+
+		code, err = strconv.ParseUint(ops[0], 0, 16)
+		if err != nil {
+			return nil, err
+		}
+		jt, err = strconv.ParseUint(ops[1], 0, 8)
+		if err != nil {
+			return nil, err
+		}
+		jf, err = strconv.ParseUint(ops[2], 0, 8)
+		if err != nil {
+			return nil, err
+		}
+		k, err = strconv.ParseUint(ops[3], 0, 32)
+		if err != nil {
+			return nil, err
+		}
+		instrs = append(instrs, pcap.BPFInstruction{
+			Code: uint16(code),
+			Jt:   uint8(jt),
+			Jf:   uint8(jf),
+			K:    uint32(k),
+		})
+	}
+	return instrs, nil
+}
+
 func main() {
 	opts := runtimeOptions{}
 	pflag.StringVarP(&opts.iface, "iface", "i", "lo", "interface to capture")
@@ -105,63 +163,10 @@ func main() {
 	}
 
 	if opts.bpf != "" {
-		var (
-			rawInstrs = strings.Split(opts.bpf, ",")
-			instrs    []pcap.BPFInstruction
-		)
-
-		for i, rawInstr := range rawInstrs {
-			// The first number is the length. We do not need it.
-			if i == 0 {
-				continue
-			}
-
-			rawInstr = strings.TrimSpace(rawInstr)
-			// The bpf_asm appends a comma to the string.
-			// Skip this case.
-			if rawInstr == "" {
-				continue
-			}
-
-			var (
-				ops  = strings.SplitN(rawInstr, " ", 4)
-				code uint64
-				jt   uint64
-				jf   uint64
-				k    uint64
-				err  error
-			)
-			if len(ops) != 4 {
-				logger.LogCritical("invalid BPF byte code")
-				os.Exit(1)
-			}
-
-			code, err = strconv.ParseUint(ops[0], 0, 16)
-			if err != nil {
-				logger.LogCritical(err)
-				os.Exit(1)
-			}
-			jt, err = strconv.ParseUint(ops[1], 0, 8)
-			if err != nil {
-				logger.LogCritical(err)
-				os.Exit(1)
-			}
-			jf, err = strconv.ParseUint(ops[2], 0, 8)
-			if err != nil {
-				logger.LogCritical(err)
-				os.Exit(1)
-			}
-			k, err = strconv.ParseUint(ops[3], 0, 32)
-			if err != nil {
-				logger.LogCritical(err)
-				os.Exit(1)
-			}
-			instrs = append(instrs, pcap.BPFInstruction{
-				Code: uint16(code),
-				Jt:   uint8(jt),
-				Jf:   uint8(jf),
-				K:    uint32(k),
-			})
+		instrs, err := parseRawBPF(opts.bpf)
+		if err != nil {
+			logger.LogCritical(err)
+			os.Exit(1)
 		}
 		if err := handle.SetBPFInstructionFilter(instrs); err != nil {
 			logger.LogCritical(err)
