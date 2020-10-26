@@ -2,6 +2,8 @@ package main
 
 import (
 	"compress/gzip"
+	"debug/elf"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -113,12 +115,50 @@ func parseRawBPF(raw string) ([]pcap.BPFInstruction, error) {
 	return instrs, nil
 }
 
+func parseELF(path string) ([]pcap.BPFInstruction, error) {
+	var instrs []pcap.BPFInstruction
+	elfFile, err := elf.Open(path)
+	if err != nil {
+		logger.LogCritical(err)
+		os.Exit(1)
+	}
+	textSection := elfFile.Section(".text")
+	if textSection == nil {
+		logger.LogCritical("no .text section in ELF file")
+		os.Exit(1)
+	}
+	byteCode, err := textSection.Data()
+	if err != nil {
+		logger.LogCritical(err)
+		os.Exit(1)
+	}
+
+	if len(byteCode)%8 != 0 {
+		return nil, fmt.Errorf(".text section does not seem do contain eBPF code")
+	}
+	for i := 0; i < len(byteCode); i += 8 {
+		var (
+			code = uint16(byteCode[i])
+			jt   = byte(byteCode[i+1] & 0xf0)
+			jf   = byte(byteCode[i+1] & 0x0f)
+			k    = binary.BigEndian.Uint32(byteCode[i+4 : i+8])
+		)
+		instrs = append(instrs, pcap.BPFInstruction{
+			Code: code,
+			Jt:   jt,
+			Jf:   jf,
+			K:    k,
+		})
+	}
+	return instrs, nil
+}
+
 func main() {
 	opts := runtimeOptions{}
 	pflag.StringVarP(&opts.iface, "iface", "i", "lo", "interface to capture")
 	pflag.StringVarP(&opts.outfile, "out", "o", "dump.pcap.gz", "specifies output file")
 	pflag.StringVarP(&opts.filter, "filter", "f", "", "set bpf capture filter")
-	pflag.StringVarP(&opts.bpf, "bpf", "b", "", "provide a raw bpf byte code filter; disables `--filter`")
+	pflag.StringVarP(&opts.bpf, "bpf", "b", "", "provide a raw bpf byte code filter or a filepath; disables `--filter`")
 	pflag.BoolVarP(&opts.promiscuous, "promiscuous", "p", true, "enable promiscuous on the interface")
 	pflag.DurationVarP(&opts.timeout, "timeout", "t", 1*time.Second, "set pcap timeout value (expert setting)")
 	pflag.DurationVarP(&opts.cleanupDelay, "delay", "d", 2*time.Second, "wait this amount of seconds after termination signal")
@@ -163,14 +203,26 @@ func main() {
 	}
 
 	if opts.bpf != "" {
-		instrs, err := parseRawBPF(opts.bpf)
-		if err != nil {
-			logger.LogCritical(err)
-			os.Exit(1)
-		}
-		if err := handle.SetBPFInstructionFilter(instrs); err != nil {
-			logger.LogCritical(err)
-			os.Exit(1)
+		if _, err := os.Stat(opts.bpf); os.IsNotExist(err) {
+			instrs, err := parseRawBPF(opts.bpf)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			if err := handle.SetBPFInstructionFilter(instrs); err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+		} else {
+			instrs, err := parseELF(opts.bpf)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			if err := handle.SetBPFInstructionFilter(instrs); err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
 		}
 	} else if opts.filter != "" {
 		if err := handle.SetBPFFilter(opts.filter); err != nil {
