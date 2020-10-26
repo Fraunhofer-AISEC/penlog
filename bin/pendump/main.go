@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -23,6 +24,7 @@ type runtimeOptions struct {
 	outfile      string
 	iface        string
 	filter       string
+	bpf          string
 	promiscuous  bool
 	timeout      time.Duration
 	cleanupDelay time.Duration
@@ -58,6 +60,7 @@ func main() {
 	pflag.StringVarP(&opts.iface, "iface", "i", "lo", "interface to capture")
 	pflag.StringVarP(&opts.outfile, "out", "o", "dump.pcap.gz", "specifies output file")
 	pflag.StringVarP(&opts.filter, "filter", "f", "", "set bpf capture filter")
+	pflag.StringVarP(&opts.bpf, "bpf", "b", "", "provide a raw bpf byte code filter; disables `--filter`")
 	pflag.BoolVarP(&opts.promiscuous, "promiscuous", "p", true, "enable promiscuous on the interface")
 	pflag.DurationVarP(&opts.timeout, "timeout", "t", 1*time.Second, "set pcap timeout value (expert setting)")
 	pflag.DurationVarP(&opts.cleanupDelay, "delay", "d", 2*time.Second, "wait this amount of seconds after termination signal")
@@ -101,7 +104,70 @@ func main() {
 		os.Exit(1)
 	}
 
-	if opts.filter != "" {
+	if opts.bpf != "" {
+		var (
+			rawInstrs = strings.Split(opts.bpf, ",")
+			instrs    []pcap.BPFInstruction
+		)
+
+		for i, rawInstr := range rawInstrs {
+			// The first number is the length. We do not need it.
+			if i == 0 {
+				continue
+			}
+
+			rawInstr = strings.TrimSpace(rawInstr)
+			// The bpf_asm appends a comma to the string.
+			// Skip this case.
+			if rawInstr == "" {
+				continue
+			}
+
+			var (
+				ops  = strings.SplitN(rawInstr, " ", 4)
+				code uint64
+				jt   uint64
+				jf   uint64
+				k    uint64
+				err  error
+			)
+			if len(ops) != 4 {
+				logger.LogCritical("invalid BPF byte code")
+				os.Exit(1)
+			}
+
+			code, err = strconv.ParseUint(ops[0], 0, 16)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			jt, err = strconv.ParseUint(ops[1], 0, 8)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			jf, err = strconv.ParseUint(ops[2], 0, 8)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			k, err = strconv.ParseUint(ops[3], 0, 32)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			instrs = append(instrs, pcap.BPFInstruction{
+				Code: uint16(code),
+				Jt:   uint8(jt),
+				Jf:   uint8(jf),
+				K:    uint32(k),
+			})
+		}
+		if err := handle.SetBPFInstructionFilter(instrs); err != nil {
+			logger.LogCritical(err)
+			os.Exit(1)
+		}
+	} else if opts.filter != "" {
 		if err := handle.SetBPFFilter(opts.filter); err != nil {
 			logger.LogCritical(err)
 			os.Exit(1)
