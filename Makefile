@@ -1,12 +1,13 @@
 GO ?= go
+version := $(shell git describe --always --dirty)
 
 all: hr pendump penrun
 
 hr:
-	$(GO) build $(GOFLAGS) -o $@ ./bin/$@/...
+	$(GO) build $(GOFLAGS) -ldflags="-X main.version=$(version)" -o $@ ./bin/$@/...
 
 pendump:
-	$(GO) build $(GOFLAGS) -o $@ ./bin/$@/...
+	$(GO) build $(GOFLAGS) -ldflags="-X main.version=$(version)" -o $@ ./bin/$@/...
 	@echo "!! capabilities for pendump needed !!"
 	@echo "\"make pendump-caps\" fixes this for you"
 

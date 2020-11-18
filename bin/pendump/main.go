@@ -2,6 +2,7 @@ package main
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -18,7 +19,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var logger = penlog.NewLogger("pendump", os.Stderr)
+var (
+	version string
+	logger  = penlog.NewLogger("pendump", os.Stderr)
+)
 
 type runtimeOptions struct {
 	outfile      string
@@ -29,6 +33,7 @@ type runtimeOptions struct {
 	timeout      time.Duration
 	cleanupDelay time.Duration
 	snaplen      uint32
+	version      bool
 }
 
 type dumper struct {
@@ -65,7 +70,13 @@ func main() {
 	pflag.DurationVarP(&opts.timeout, "timeout", "t", 1*time.Second, "set pcap timeout value (expert setting)")
 	pflag.DurationVarP(&opts.cleanupDelay, "delay", "d", 2*time.Second, "wait this amount of seconds after termination signal")
 	pflag.Uint32VarP(&opts.snaplen, "snaplen", "s", 65535, "set pcap saplen value (expert setting)")
+	pflag.BoolVarP(&opts.version, "version", "V", false, "show version and exit")
 	pflag.Parse()
+
+	if opts.version {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 
 	var (
 		readyFile  *os.File

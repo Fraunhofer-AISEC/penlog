@@ -26,7 +26,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var (
+	version string
+	json    = jsoniter.ConfigCompatibleWithStandardLibrary
+)
 
 var (
 	errInvalidData = errors.New("Invalid data")
@@ -377,8 +380,14 @@ func main() {
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
 	pflag.BoolVar(&conv.volatileInfo, "volatile-info", false, "Overwrite info messages in the same line")
+	version := pflag.BoolP("version", "V", false, "Show version and exit")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
 	pflag.Parse()
+
+	if *version {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 
 	conv.logFmt = "%s {%s} [%s]: %s"
 
