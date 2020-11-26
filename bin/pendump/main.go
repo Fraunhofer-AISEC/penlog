@@ -211,6 +211,10 @@ func main() {
 
 	if readyFile != nil {
 		logger.LogDebug("initializing done; signaling readiness")
+		if _, err := io.Copy(readyFile, strings.NewReader("OK")); err != nil {
+			logger.LogError(err)
+			os.Exit(1)
+		}
 		readyFile.Close()
 	}
 
