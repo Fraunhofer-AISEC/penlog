@@ -49,6 +49,14 @@ func padOrTruncate(s string, maxLen int) string {
 	return res
 }
 
+type HRDialect int
+
+const (
+	HRTiny HRDialect = iota
+	HRNano
+	HRFull
+)
+
 type HRFormatter struct {
 	Timespec        string
 	CompLen         int
@@ -61,7 +69,7 @@ type HRFormatter struct {
 	ShowLevelPrefix bool
 	ShowID          bool
 	ShowTags        bool
-	TinyFormat      bool
+	Dialect         HRDialect
 }
 
 func NewHRFormatter() *HRFormatter {
@@ -75,7 +83,7 @@ func NewHRFormatter() *HRFormatter {
 		ShowStacktraces: false,
 		ShowLevelPrefix: false,
 		ShowTags:        false,
-		TinyFormat:      true,
+		Dialect:         HRNano,
 	}
 }
 
@@ -155,7 +163,7 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 	payload = fmt.Sprintf(fmtStr, payload)
 
 	if ts == "NONE" {
-        ts = "0000000000000000000"
+		ts = "0000000000000000000"
 	} else {
 		var tsParsed time.Time
 		tsParsed, err = time.Parse(time.RFC3339Nano, ts)
@@ -169,13 +177,19 @@ func (f *HRFormatter) Format(msg map[string]interface{}) (string, error) {
 	}
 
 	var out string
-	if f.TinyFormat {
+	switch f.Dialect {
+	case HRNano:
+		out = payload
+	case HRTiny:
 		out = fmt.Sprintf("%s: %s", ts, payload)
-	} else {
+	case HRFull:
 		comp = padOrTruncate(comp, f.CompLen)
 		msgType = padOrTruncate(msgType, f.TypeLen)
 		out = fmt.Sprintf("%s {%s} [%s]: %s", ts, comp, msgType, payload)
+	default:
+		panic("BUG: unknown dialect")
 	}
+
 	if f.ShowID {
 		if rawVal, ok := msg["id"]; ok {
 			if val, ok := rawVal.(string); ok {
