@@ -246,3 +246,8 @@ class Logger:
 
     def log_summary(self, data: str, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE, tags)
+
+
+class DiscardLogger(Logger):
+    def _log(self, msg: Dict, depth: int) -> None:
+        pass
