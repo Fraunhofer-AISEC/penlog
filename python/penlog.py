@@ -9,7 +9,7 @@ import traceback
 import uuid
 from datetime import datetime
 from enum import Enum, IntEnum
-from typing import Dict, List, TextIO, Optional
+from typing import Any, Dict, List, TextIO, Optional
 
 
 class MessageType(str, Enum):
@@ -82,10 +82,8 @@ class HRFormatter:
 
     @staticmethod
     def _colorize_data(data: str, prio: MessagePrio) -> str:
-        if prio == MessagePrio.EMERGENCY or \
-                prio == MessagePrio.ALERT or \
-                prio == MessagePrio.CRITICAL or \
-                prio == MessagePrio.ERROR:
+        if prio in (MessagePrio.EMERGENCY, MessagePrio.ALERT,
+                    MessagePrio.CRITICAL, MessagePrio.ERROR):
             data = colorize(Color.BOLD, colorize(Color.RED, data))
         elif prio == MessagePrio.WARNING:
             data = colorize(Color.BOLD, colorize(Color.YELLOW, data))
@@ -193,58 +191,58 @@ class Logger:
             print("invalid penlog output", file=sys.stderr)
             sys.exit(1)
 
-    def _log_msg(self, data: str, type_: MessageType = MessageType.MESSAGE,
+    def _log_msg(self, data: Any, type_: MessageType = MessageType.MESSAGE,
                  prio: MessagePrio = MessagePrio.INFO,
                  tags: Optional[List[str]] = None) -> None:
         msg = {
             'type': type_,
             'priority': prio,
-            'data': data,
+            'data': str(data),
         }
         if tags:
             msg['tags'] = tags
         self._log(msg, 4)
 
-    def log_msg(self, data: str, type_: MessageType = MessageType.MESSAGE,
+    def log_msg(self, data: Any, type_: MessageType = MessageType.MESSAGE,
                 prio: MessagePrio = MessagePrio.INFO,
                 tags: Optional[List[str]] = None) -> None:
         msg = {
             'type': type_,
             'priority': prio,
-            'data': data,
+            'data': str(data),
         }
         if tags:
             msg['tags'] = tags
         self._log(msg, 3)
 
-    def log_preamble(self, data: str) -> None:
+    def log_preamble(self, data: Any) -> None:
         self._log_msg(data, MessageType.PREAMBLE, MessagePrio.NOTICE)
 
-    def log_read(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_read(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.READ, MessagePrio.DEBUG, tags)
 
-    def log_write(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_write(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.WRITE, MessagePrio.DEBUG, tags)
 
-    def log_debug(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_debug(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.DEBUG, tags)
 
-    def log_info(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_info(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.INFO, tags)
 
-    def log_notice(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_notice(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.NOTICE, tags)
 
-    def log_warning(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_warning(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.WARNING, tags)
 
-    def log_error(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_error(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.ERROR, tags)
 
-    def log_critical(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_critical(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.CRITICAL, tags)
 
-    def log_summary(self, data: str, tags: Optional[List[str]] = None) -> None:
+    def log_summary(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE, tags)
 
 
