@@ -71,6 +71,7 @@ type Logger struct {
 	stacktrace  bool
 	loglevel    Prio
 	outputType  OutType
+	includeUUID bool
 }
 
 func NewLogger(component string, w io.Writer) *Logger {
@@ -142,6 +143,7 @@ func NewLogger(component string, w io.Writer) *Logger {
 		stacktrace:  helpers.GetEnvBool("PENLOG_CAPTURE_STACKTRACES"),
 		outputType:  outputType,
 		writer:      w,
+		includeUUID: false,
 	}
 }
 
@@ -188,6 +190,12 @@ func (l *Logger) SetStacktrace(enable bool) {
 func (l *Logger) SetLogLevel(prio Prio) {
 	l.mu.Lock()
 	l.loglevel = prio
+	l.mu.Unlock()
+}
+
+func (l *Logger) SetIncludeUUID(enabled bool) {
+	l.mu.Lock()
+	l.includeUUID = enabled
 	l.mu.Unlock()
 }
 
@@ -273,11 +281,11 @@ func (l *Logger) output(msg map[string]interface{}, depth int) {
 			}
 		}
 	}
-	var (
-		now = time.Now()
-		id  = uuid.New()
-	)
-	msg["id"] = id.String()
+
+	if l.includeUUID {
+		msg["id"] = uuid.New().String()
+	}
+	now := time.Now()
 	msg["timestamp"] = now.Format(l.timespec)
 	msg["component"] = l.component
 	msg["host"] = l.host
