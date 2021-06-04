@@ -1,0 +1,27 @@
+name: penlog
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: prepare
+      run: |
+        sudo apt-get update
+        sudo apt-get install make golang jq git bats asciidoctor
+    - name: clitest
+      run: |
+        export PATH=$PATH:$PWD
+        export GOFLAGS="-race"
+        cp bin/penrun/penrun .
+        make hr clitest
+    - name: man
+      run: make man
