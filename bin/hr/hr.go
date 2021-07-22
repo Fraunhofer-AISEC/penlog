@@ -451,7 +451,8 @@ func main() {
 		for _, file := range pflag.Args() {
 			reader, err = getReader(file)
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				os.Exit(1)
 			}
 			conv.transform(reader)
 		}
