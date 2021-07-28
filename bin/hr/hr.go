@@ -447,7 +447,7 @@ func main() {
 		}
 	}
 
-	if isatty(uintptr(syscall.Stdin)) {
+	if pflag.NArg() > 0 {
 		for _, file := range pflag.Args() {
 			reader, err = getReader(file)
 			if err != nil {
