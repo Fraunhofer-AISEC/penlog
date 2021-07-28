@@ -63,6 +63,14 @@ func removeEmpy(data []string) []string {
 
 func getReader(filename string) (io.Reader, error) {
 	var reader io.Reader
+	if s, err := os.Stat(filename); err != nil {
+		return nil, err
+	} else {
+		if s.IsDir() {
+			return nil, fmt.Errorf("%s: is a directory", filename)
+		}
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
