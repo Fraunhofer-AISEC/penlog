@@ -3,7 +3,7 @@ module github.com/Fraunhofer-AISEC/penlog
 go 1.14
 
 require (
-	git.sr.ht/~rumpelsepp/helpers v0.0.0-20200624161822-20ffd23b9f36
+	codeberg.org/rumpelsepp/helpers v0.0.0-20210716071558-e9191903beef
 	github.com/coreos/go-systemd/v22 v22.1.0
 	github.com/google/gopacket v1.1.17
 	github.com/google/uuid v1.1.1

@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"git.sr.ht/~rumpelsepp/helpers"
+	"codeberg.org/rumpelsepp/helpers"
 	"github.com/coreos/go-systemd/v22/journal"
 	"github.com/google/uuid"
 )

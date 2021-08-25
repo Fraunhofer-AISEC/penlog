@@ -1,8 +1,5 @@
-git.sr.ht/~rumpelsepp/helpers v0.0.0-20200603092348-de954e3a9250 h1:+J1sWqQaWf65HW6iqsr6pS0i3alrAlYus+b4fJ+17Hs=
-git.sr.ht/~rumpelsepp/helpers v0.0.0-20200603092348-de954e3a9250/go.mod h1:+72F/Hnny3Vsdm3R99JyhBilOrA6uecji8X5BXR7ajY=
-git.sr.ht/~rumpelsepp/helpers v0.0.0-20200624161822-20ffd23b9f36 h1:W5o5LUxSf3v5p6PbhzTG75acGgTgewhc/jeANPjIRD4=
-git.sr.ht/~rumpelsepp/helpers v0.0.0-20200624161822-20ffd23b9f36/go.mod h1:Xu4ywdHjvI4npqLSosaHH2dDBueUBrd23XgeQLxWPLA=
-github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf h1:iW4rZ826su+pqaw19uhpSCzhj44qo35pNgKFGqzDKkU=
+codeberg.org/rumpelsepp/helpers v0.0.0-20210716071558-e9191903beef h1:zchON2Mu1qrCh/of6b13t4Y3RGdMg6vbkJzGirKUinw=
+codeberg.org/rumpelsepp/helpers v0.0.0-20210716071558-e9191903beef/go.mod h1:s9P0DWbuTyEAU5lfHg9Fy+nh89mrnJOi6DmOV2R775g=
 github.com/coreos/go-systemd/v22 v22.1.0 h1:kq/SbG2BCKLkDKkjQf5OWwKWUKj1lgs3lFI4PxnR5lg=
 github.com/coreos/go-systemd/v22 v22.1.0/go.mod h1:xO0FLkIi5MaZafQlIrOotqXZ90ih+1atmu1JpKERPPk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

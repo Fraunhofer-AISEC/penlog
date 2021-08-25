@@ -19,7 +19,7 @@ import (
 	"sync"
 	"syscall"
 
-	"git.sr.ht/~rumpelsepp/helpers"
+	"codeberg.org/rumpelsepp/helpers"
 	"github.com/Fraunhofer-AISEC/penlog"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/compress/zstd"
