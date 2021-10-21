@@ -20,7 +20,7 @@ import (
 	"syscall"
 
 	"codeberg.org/rumpelsepp/helpers"
-	"github.com/Fraunhofer-AISEC/penlog"
+	"github.com/Fraunhofer-AISEC/penlogger"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/pflag"
@@ -41,9 +41,9 @@ type compressor interface {
 }
 
 type converter struct {
-	formatter    *penlog.HRFormatter
+	formatter    *penlogger.HRFormatter
 	logFmt       string
-	logLevel     penlog.Prio
+	logLevel     penlogger.Prio
 	filters      []*filter
 	stdoutFilter *filter
 	jq           string
@@ -105,26 +105,26 @@ func (c *converter) addFilterSpecs(specs []string) error {
 
 func (c *converter) addPrioFilter(spec string) error {
 	if val, err := strconv.ParseInt(spec, 10, 64); err == nil {
-		c.logLevel = penlog.Prio(val)
+		c.logLevel = penlogger.Prio(val)
 		return nil
 	}
 	switch strings.ToLower(spec) {
 	case "debug":
-		c.logLevel = penlog.PrioDebug
+		c.logLevel = penlogger.PrioDebug
 	case "info":
-		c.logLevel = penlog.PrioInfo
+		c.logLevel = penlogger.PrioInfo
 	case "notice":
-		c.logLevel = penlog.PrioNotice
+		c.logLevel = penlogger.PrioNotice
 	case "warning":
-		c.logLevel = penlog.PrioWarning
+		c.logLevel = penlogger.PrioWarning
 	case "error":
-		c.logLevel = penlog.PrioError
+		c.logLevel = penlogger.PrioError
 	case "critical":
-		c.logLevel = penlog.PrioCritical
+		c.logLevel = penlogger.PrioCritical
 	case "alert":
-		c.logLevel = penlog.PrioAlert
+		c.logLevel = penlogger.PrioAlert
 	case "emergency":
-		c.logLevel = penlog.PrioEmergency
+		c.logLevel = penlogger.PrioEmergency
 	default:
 		return fmt.Errorf("invalid loglevel '%s'", spec)
 	}
@@ -226,11 +226,11 @@ func (c *converter) transform(r io.Reader) {
 			}
 		}
 
-		var priority penlog.Prio
+		var priority penlogger.Prio
 
 		if prio, ok := d["priority"]; ok {
 			if p, ok := prio.(float64); ok {
-				priority = penlog.Prio(p)
+				priority = penlogger.Prio(p)
 				if priority > c.logLevel {
 					continue
 				}
@@ -251,7 +251,7 @@ func (c *converter) transform(r io.Reader) {
 				}
 				fmt.Print(hrLine)
 				// If in volatile info mode override infos in the same line
-				if priority == penlog.PrioInfo {
+				if priority == penlogger.PrioInfo {
 					fmt.Print("\r")
 					cursorReset = true
 				} else {
@@ -360,7 +360,7 @@ func main() {
 		linesCli      bool
 		stacktraceCli bool
 		conv          = converter{
-			formatter:   penlog.NewHRFormatter(),
+			formatter:   penlogger.NewHRFormatter(),
 			workers:     0,
 			broadcastCh: make(chan map[string]interface{}),
 			cleanedUp:   false,
@@ -376,7 +376,6 @@ func main() {
 	pflag.StringVarP(&conv.id, "id", "i", "", "only show this particular message")
 	pflag.IntVarP(&conv.formatter.CompLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.formatter.TypeLen, "typelen", "t", 8, "len of type field")
-	pflag.BoolVar(&conv.formatter.TinyFormat, "tiny", false, "use penlog hr-tiny format")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
 	pflag.BoolVar(&conv.volatileInfo, "volatile-info", false, "Overwrite info messages in the same line")
