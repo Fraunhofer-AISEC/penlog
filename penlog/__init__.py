@@ -9,7 +9,7 @@ import traceback
 import uuid
 from datetime import datetime
 from enum import Enum, IntEnum
-from typing import Any, Dict, List, TextIO, Optional
+from typing import Any, TextIO, Optional
 
 
 class MessageType(str, Enum):
@@ -101,7 +101,7 @@ class HRFormatter:
             data = colorize(Color.GRAY, data)
         return data
 
-    def format(self, msg: Dict) -> str:
+    def format(self, msg: dict) -> str:
         out = ""
         ts = datetime.fromisoformat(msg["timestamp"])
         ts_formatted = ts.strftime("%b %d %H:%M:%S.%f")[:-3]
@@ -173,7 +173,7 @@ class Logger:
             show_colors, False, self.lines, self.stacktraces, False, is_tiny
         )
 
-    def _log(self, msg: Dict, depth: int) -> None:
+    def _log(self, msg: dict, depth: int) -> None:
         if "priority" in msg:
             try:
                 prio = MessagePrio(msg["priority"])
@@ -210,7 +210,7 @@ class Logger:
         data: Any,
         type_: MessageType = MessageType.MESSAGE,
         prio: MessagePrio = MessagePrio.INFO,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
     ) -> None:
         msg = {
             "type": type_,
@@ -226,7 +226,7 @@ class Logger:
         data: Any,
         type_: MessageType = MessageType.MESSAGE,
         prio: MessagePrio = MessagePrio.INFO,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
     ) -> None:
         msg = {
             "type": type_,
@@ -237,28 +237,28 @@ class Logger:
             msg["tags"] = tags
         self._log(msg, 3)
 
-    def log_trace(self, data: Any, tags: Optional[List[str]] = None) -> None:
+    def log_trace(self, data: Any, tags: Optional[list[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.TRACE, tags)
 
-    def log_debug(self, data: Any, tags: Optional[List[str]] = None) -> None:
+    def log_debug(self, data: Any, tags: Optional[list[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.DEBUG, tags)
 
-    def log_info(self, data: Any, tags: Optional[List[str]] = None) -> None:
+    def log_info(self, data: Any, tags: Optional[list[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.INFO, tags)
 
-    def log_notice(self, data: Any, tags: Optional[List[str]] = None) -> None:
+    def log_notice(self, data: Any, tags: Optional[list[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.NOTICE, tags)
 
-    def log_warning(self, data: Any, tags: Optional[List[str]] = None) -> None:
+    def log_warning(self, data: Any, tags: Optional[list[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.WARNING, tags)
 
-    def log_error(self, data: Any, tags: Optional[List[str]] = None) -> None:
+    def log_error(self, data: Any, tags: Optional[list[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.ERROR, tags)
 
-    def log_critical(self, data: Any, tags: Optional[List[str]] = None) -> None:
+    def log_critical(self, data: Any, tags: Optional[list[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.CRITICAL, tags)
 
 
 class DiscardLogger(Logger):
-    def _log(self, msg: Dict, depth: int) -> None:
+    def _log(self, msg: dict, depth: int) -> None:
         pass
