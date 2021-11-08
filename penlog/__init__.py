@@ -57,18 +57,23 @@ def colorize(color: Color, s: str) -> str:
 def _get_line_number(depth: int) -> str:
     stack = inspect.stack()
     frame = stack[depth]
-    return f'{frame.filename}:{frame.lineno}'
+    return f"{frame.filename}:{frame.lineno}"
 
 
 def str2bool(s: str) -> bool:
-    return s.lower() in ['true', '1', 't', 'y']
+    return s.lower() in ["true", "1", "t", "y"]
 
 
 class HRFormatter:
-
-    def __init__(self, show_colors: bool, show_ids: bool,
-                 show_lines: bool, show_stacktraces: bool,
-                 show_tags: bool, tiny: bool):
+    def __init__(
+        self,
+        show_colors: bool,
+        show_ids: bool,
+        show_lines: bool,
+        show_stacktraces: bool,
+        show_tags: bool,
+        tiny: bool,
+    ):
         self.show_colors = show_colors
         self.show_ids = show_ids
         self.show_lines = show_lines
@@ -78,8 +83,12 @@ class HRFormatter:
 
     @staticmethod
     def _colorize_data(data: str, prio: MessagePrio) -> str:
-        if prio in (MessagePrio.EMERGENCY, MessagePrio.ALERT,
-                    MessagePrio.CRITICAL, MessagePrio.ERROR):
+        if prio in (
+            MessagePrio.EMERGENCY,
+            MessagePrio.ALERT,
+            MessagePrio.CRITICAL,
+            MessagePrio.ERROR,
+        ):
             data = colorize(Color.BOLD, colorize(Color.RED, data))
         elif prio == MessagePrio.WARNING:
             data = colorize(Color.BOLD, colorize(Color.YELLOW, data))
@@ -123,7 +132,7 @@ class HRFormatter:
         if self.show_stacktraces and "stacktrace" in msg:
             out += "\n"
             out += " => stacktrace:\n"
-            for line in msg['stacktrace'].splitlines():
+            for line in msg["stacktrace"].splitlines():
                 if self.show_colors:
                     out += colorize(Color.GRAY, f" | {line}\n")
                 else:
@@ -132,12 +141,16 @@ class HRFormatter:
 
 
 class Logger:
-    def __init__(self, component: str = "root", flush: bool = False,
-                 file_: TextIO = sys.stderr,
-                 loglevel: MessagePrio = MessagePrio.DEBUG,
-                 output_type: Optional[OutputType] = None,
-                 show_colors: bool = False,
-                 include_uuid: bool = False):
+    def __init__(
+        self,
+        component: str = "root",
+        flush: bool = False,
+        file_: TextIO = sys.stderr,
+        loglevel: MessagePrio = MessagePrio.DEBUG,
+        output_type: Optional[OutputType] = None,
+        show_colors: bool = False,
+        include_uuid: bool = False,
+    ):
         self.host = socket.gethostname()
         self.component = component
         self.flush = flush
@@ -155,8 +168,9 @@ class Logger:
         self.lines = str2bool(os.environ.get("PENLOG_CAPTURE_LINES", ""))
         self.stacktraces = str2bool(os.environ.get("PENLOG_CAPTURE_STACKTRACES", ""))
         is_tiny = True if self.output_type == OutputType.HR_TINY else False
-        self.hr_formatter = HRFormatter(show_colors, False, self.lines,
-                                        self.stacktraces, False, is_tiny)
+        self.hr_formatter = HRFormatter(
+            show_colors, False, self.lines, self.stacktraces, False, is_tiny
+        )
 
     def _log(self, msg: Dict, depth: int) -> None:
         if "priority" in msg:
@@ -175,7 +189,7 @@ class Logger:
         if self.lines:
             msg["line"] = _get_line_number(depth)
         if self.stacktraces:
-            msg["stacktrace"] = ''.join(traceback.format_stack())
+            msg["stacktrace"] = "".join(traceback.format_stack())
         if self.output_type == OutputType.JSON:
             print(json.dumps(msg), file=self.file, flush=self.flush)
         elif self.output_type == OutputType.JSON_PRETTY:
@@ -190,28 +204,36 @@ class Logger:
             print("invalid penlog output", file=sys.stderr)
             sys.exit(1)
 
-    def _log_msg(self, data: Any, type_: MessageType = MessageType.MESSAGE,
-                 prio: MessagePrio = MessagePrio.INFO,
-                 tags: Optional[List[str]] = None) -> None:
+    def _log_msg(
+        self,
+        data: Any,
+        type_: MessageType = MessageType.MESSAGE,
+        prio: MessagePrio = MessagePrio.INFO,
+        tags: Optional[List[str]] = None,
+    ) -> None:
         msg = {
-            'type': type_,
-            'priority': prio,
-            'data': str(data),
+            "type": type_,
+            "priority": prio,
+            "data": str(data),
         }
         if tags:
-            msg['tags'] = tags
+            msg["tags"] = tags
         self._log(msg, 4)
 
-    def log_msg(self, data: Any, type_: MessageType = MessageType.MESSAGE,
-                prio: MessagePrio = MessagePrio.INFO,
-                tags: Optional[List[str]] = None) -> None:
+    def log_msg(
+        self,
+        data: Any,
+        type_: MessageType = MessageType.MESSAGE,
+        prio: MessagePrio = MessagePrio.INFO,
+        tags: Optional[List[str]] = None,
+    ) -> None:
         msg = {
-            'type': type_,
-            'priority': prio,
-            'data': str(data),
+            "type": type_,
+            "priority": prio,
+            "data": str(data),
         }
         if tags:
-            msg['tags'] = tags
+            msg["tags"] = tags
         self._log(msg, 3)
 
     def log_debug(self, data: Any, tags: Optional[List[str]] = None) -> None:
