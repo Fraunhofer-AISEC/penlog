@@ -25,6 +25,7 @@ class MessagePrio(IntEnum):
     NOTICE = 5
     INFO = 6
     DEBUG = 7
+    TRACE = 8
 
 
 class OutputType(Enum):
@@ -96,7 +97,7 @@ class HRFormatter:
             data = colorize(Color.BOLD, data)
         elif prio == MessagePrio.INFO:
             pass
-        elif prio == MessagePrio.DEBUG:
+        elif prio in (MessagePrio.DEBUG, MessagePrio.TRACE):
             data = colorize(Color.GRAY, data)
         return data
 
@@ -235,6 +236,9 @@ class Logger:
         if tags:
             msg["tags"] = tags
         self._log(msg, 3)
+
+    def log_trace(self, data: Any, tags: Optional[List[str]] = None) -> None:
+        self._log_msg(data, MessageType.MESSAGE, MessagePrio.TRACE, tags)
 
     def log_debug(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.DEBUG, tags)
