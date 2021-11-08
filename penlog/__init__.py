@@ -13,11 +13,7 @@ from typing import Any, Dict, List, TextIO, Optional
 
 
 class MessageType(str, Enum):
-    READ = "read"
-    WRITE = "write"
-    PREAMBLE = "preamble"
     MESSAGE = "message"
-    SUMMARY = "summary"
 
 
 class MessagePrio(IntEnum):
@@ -218,15 +214,6 @@ class Logger:
             msg['tags'] = tags
         self._log(msg, 3)
 
-    def log_preamble(self, data: Any) -> None:
-        self._log_msg(data, MessageType.PREAMBLE, MessagePrio.INFO)
-
-    def log_read(self, data: Any, tags: Optional[List[str]] = None) -> None:
-        self._log_msg(data, MessageType.READ, MessagePrio.DEBUG, tags)
-
-    def log_write(self, data: Any, tags: Optional[List[str]] = None) -> None:
-        self._log_msg(data, MessageType.WRITE, MessagePrio.DEBUG, tags)
-
     def log_debug(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.DEBUG, tags)
 
@@ -244,9 +231,6 @@ class Logger:
 
     def log_critical(self, data: Any, tags: Optional[List[str]] = None) -> None:
         self._log_msg(data, MessageType.MESSAGE, MessagePrio.CRITICAL, tags)
-
-    def log_summary(self, data: Any, tags: Optional[List[str]] = None) -> None:
-        self._log_msg(data, MessageType.SUMMARY, MessagePrio.NOTICE, tags)
 
 
 class DiscardLogger(Logger):
