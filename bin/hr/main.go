@@ -4,13 +4,11 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime/pprof"
@@ -46,7 +44,6 @@ type converter struct {
 	logLevel     penlog.Prio
 	filters      []*filter
 	stdoutFilter *filter
-	jq           string
 	id           string
 	volatileInfo bool
 
@@ -159,21 +156,10 @@ func (c *converter) printError(msg string) {
 func (c *converter) transform(r io.Reader) {
 	var (
 		err         error
-		jq          *exec.Cmd
 		jsonLine    []byte
 		reader      = bufio.NewReader(r)
 		cursorReset = false
 	)
-	if c.jq != "" {
-		reader, jq, err = createJQ(r, c.jq)
-		if err != nil {
-			panic(err)
-		}
-		defer func() {
-			jq.Process.Kill()
-			jq.Wait()
-		}()
-	}
 	for !errors.Is(err, io.EOF) {
 		jsonLine, err = reader.ReadBytes('\n')
 		if err != nil {
@@ -310,47 +296,6 @@ func (c *converter) fileWorker(wg *sync.WaitGroup, data chan map[string]interfac
 	wg.Done()
 }
 
-func createJQ(r io.Reader, filter string) (*bufio.Reader, *exec.Cmd, error) {
-	cmd := exec.Command("jq", "-c", "--unbuffered", filter)
-	cmd.Stderr = os.Stderr
-	jqOut, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, nil, err
-	}
-	jqIn, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, nil, err
-	}
-	if err := cmd.Start(); err != nil {
-		return nil, nil, err
-	}
-	go func() {
-		var (
-			scanner = bufio.NewScanner(r)
-			tmpBuf  = make([]byte, 32*1024)
-		)
-		for scanner.Scan() {
-			var (
-				d    map[string]interface{}
-				data = scanner.Bytes()
-			)
-			if err := json.Unmarshal(data, &d); err == nil {
-				if _, err := io.CopyBuffer(jqIn, bytes.NewReader(data), tmpBuf); err != nil {
-					fPrintError(jqIn, err.Error())
-					break
-				}
-			} else {
-				fPrintError(jqIn, scanner.Text())
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			fPrintError(jqIn, err.Error())
-		}
-		jqIn.Close()
-	}()
-	return bufio.NewReader(jqOut), cmd, nil
-}
-
 func main() {
 	var (
 		err           error
@@ -372,7 +317,6 @@ func main() {
 	pflag.BoolVar(&stacktraceCli, "show-stacktraces", false, "show stacktrace if available")
 	pflag.BoolVar(&conv.formatter.ShowID, "show-ids", false, "show unique message id")
 	pflag.BoolVar(&conv.formatter.ShowTags, "show-tags", false, "show penlog message tags")
-	pflag.StringVarP(&conv.jq, "jq", "j", "", "run the jq tool as a preprocessor")
 	pflag.StringVarP(&conv.id, "id", "i", "", "only show this particular message")
 	pflag.IntVarP(&conv.formatter.CompLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.formatter.TypeLen, "typelen", "t", 8, "len of type field")
