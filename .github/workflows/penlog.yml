@@ -21,7 +21,6 @@ jobs:
       run: |
         export PATH=$PATH:$PWD
         export GOFLAGS="-race"
-        cp bin/penrun/penrun .
         make hr clitest
     - name: man
       run: make man

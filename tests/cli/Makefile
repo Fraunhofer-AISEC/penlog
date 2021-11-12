@@ -1,7 +1,7 @@
+.PHONY: test
 test:
 	bats --tap .
 
+.PHONY: lint
 lint:
 	shellcheck --shell=bash *.bash
-
-.PHONY: test lint
