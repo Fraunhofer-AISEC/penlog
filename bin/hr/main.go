@@ -160,10 +160,12 @@ func (c *converter) transform(r io.Reader) {
 		reader      = bufio.NewReader(r)
 		cursorReset = false
 	)
-	for !errors.Is(err, io.EOF) {
+	// ErrUnexpectedEOF occurs when reading a compressed file which is not yet
+	// finalized. Let's just error out in this case.
+	for !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 		jsonLine, err = reader.ReadBytes('\n')
 		if err != nil {
-			if !errors.Is(err, io.EOF) {
+			if !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 				c.printError(err.Error())
 			}
 			continue
@@ -231,7 +233,8 @@ func (c *converter) transform(r io.Reader) {
 		}
 		if hrLine, err := c.formatter.Format(d); err == nil {
 			if c.volatileInfo && isatty(uintptr(syscall.Stdout)) {
-				// If the cursor has been reset, the line has to be cleared before new content can be written
+				// If the cursor has been reset, the line has to be cleared
+				// before new content can be written
 				if cursorReset {
 					fmt.Print(clearLine)
 				}
