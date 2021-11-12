@@ -208,7 +208,7 @@ class Logger:
     def _log_msg(
         self,
         data: Any,
-        type_: MessageType = MessageType.MESSAGE,
+        type_: str = MessageType.MESSAGE,
         prio: MessagePrio = MessagePrio.INFO,
         tags: Optional[list[str]] = None,
     ) -> None:
@@ -224,7 +224,7 @@ class Logger:
     def log_msg(
         self,
         data: Any,
-        type_: MessageType = MessageType.MESSAGE,
+        type_: str = MessageType.MESSAGE,
         prio: MessagePrio = MessagePrio.INFO,
         tags: Optional[list[str]] = None,
     ) -> None:
