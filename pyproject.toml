@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pypenlog"
-version = "0.2.2"
+version = "0.2.3"
 description = "Library implementing AISECs penlog specification"
 authors = ["Stefan Tatschner <stefan.tatschner@aisec.fraunhofer.de>"]
 license = "Apache"
