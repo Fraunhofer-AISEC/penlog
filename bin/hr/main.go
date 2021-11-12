@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"codeberg.org/rumpelsepp/helpers"
 	penlog "github.com/Fraunhofer-AISEC/penlogger"
@@ -392,6 +393,7 @@ func main() {
 		if s, ok := sig.(syscall.Signal); ok {
 			exitCode = 128 + int(s)
 		}
+		time.Sleep(1 * time.Second)
 		conv.cleanup()
 		os.Exit(exitCode)
 	}()
