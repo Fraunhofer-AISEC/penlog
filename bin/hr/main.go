@@ -363,9 +363,13 @@ func main() {
 	)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
-		<-c
+		sig := <-c
+		exitCode := 1
+		if s, ok := sig.(syscall.Signal); ok {
+			exitCode = 128 + int(s)
+		}
 		conv.cleanup()
-		os.Exit(1)
+		os.Exit(exitCode)
 	}()
 
 	conv.formatter.ShowColors = colorsCli
