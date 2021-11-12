@@ -107,6 +107,8 @@ func (c *converter) addPrioFilter(spec string) error {
 		return nil
 	}
 	switch strings.ToLower(spec) {
+	case "trace":
+		c.logLevel = penlog.PrioTrace
 	case "debug":
 		c.logLevel = penlog.PrioDebug
 	case "info":
