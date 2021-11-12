@@ -20,7 +20,7 @@ import (
 	"syscall"
 
 	"codeberg.org/rumpelsepp/helpers"
-	"github.com/Fraunhofer-AISEC/penlog"
+	penlog "github.com/Fraunhofer-AISEC/penlogger"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/compress/zstd"
 	"github.com/spf13/pflag"
@@ -376,7 +376,6 @@ func main() {
 	pflag.StringVarP(&conv.id, "id", "i", "", "only show this particular message")
 	pflag.IntVarP(&conv.formatter.CompLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.formatter.TypeLen, "typelen", "t", 8, "len of type field")
-	pflag.BoolVar(&conv.formatter.TinyFormat, "tiny", false, "use penlog hr-tiny format")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
 	pflag.BoolVar(&conv.volatileInfo, "volatile-info", false, "Overwrite info messages in the same line")
