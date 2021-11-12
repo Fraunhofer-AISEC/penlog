@@ -299,6 +299,20 @@ func (c *converter) fileWorker(wg *sync.WaitGroup, data chan map[string]interfac
 	wg.Done()
 }
 
+func configureFormatter(in string, formatter *penlog.HRFormatter) error {
+	switch strings.ToLower(in) {
+	case "", "hr", "hr-full":
+		formatter.Dialect = penlog.HRFull
+	case "hr-nano":
+		formatter.Dialect = penlog.HRNano
+	case "hr-tiny":
+		formatter.Dialect = penlog.HRTiny
+	default:
+		return fmt.Errorf("invalid hr format: %s", in)
+	}
+	return nil
+}
+
 func main() {
 	var (
 		err           error
@@ -307,6 +321,7 @@ func main() {
 		colorsCli     bool
 		linesCli      bool
 		stacktraceCli bool
+		hrFormatRaw   string
 		conv          = converter{
 			formatter:   penlog.NewHRFormatter(),
 			workers:     0,
@@ -324,6 +339,7 @@ func main() {
 	pflag.IntVarP(&conv.formatter.CompLen, "complen", "c", 8, "len of component field")
 	pflag.IntVarP(&conv.formatter.TypeLen, "typelen", "t", 8, "len of type field")
 	pflag.StringVarP(&prioLevelRaw, "priority", "p", "debug", "show messages with a lower priority level")
+	pflag.StringVarP(&hrFormatRaw, "hr-format", "F", "hr-full", "specify hr format: hr-full, hr-tiny, hr-nona")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
 	pflag.BoolVar(&conv.volatileInfo, "volatile-info", false, "Overwrite info messages in the same line")
 	showVersion := pflag.BoolP("version", "V", false, "Show version and exit")
@@ -336,6 +352,11 @@ func main() {
 	}
 
 	conv.logFmt = "%s {%s} [%s]: %s"
+
+	if err := configureFormatter(hrFormatRaw, conv.formatter); err != nil {
+		colorEprintf(colorRed, conv.formatter.ShowColors, err.Error())
+		os.Exit(1)
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)
