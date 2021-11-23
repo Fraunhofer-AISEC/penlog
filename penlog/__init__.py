@@ -224,8 +224,7 @@ class Logger:
             out = self.hr_formatter.format(msg)
             print(out, file=self.file, flush=self.flush)
         else:
-            print("invalid penlog output", file=sys.stderr)
-            sys.exit(1)
+            raise RuntimeError("BUG: invalid penlog output")
 
     def _log_msg(
         self,
