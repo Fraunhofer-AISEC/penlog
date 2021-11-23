@@ -33,6 +33,7 @@ class OutputType(Enum):
     JSON_PRETTY = "json-pretty"
     HR = "hr"
     HR_TINY = "hr-tiny"
+    HR_NANO = "hr-nano"
 
 
 class Color(Enum):
@@ -73,14 +74,14 @@ class HRFormatter:
         show_lines: bool,
         show_stacktraces: bool,
         show_tags: bool,
-        tiny: bool,
+        output_type: OutputType,
     ):
         self.show_colors = show_colors
         self.show_ids = show_ids
         self.show_lines = show_lines
         self.show_stacktraces = show_stacktraces
         self.show_tags = show_tags
-        self.tiny = tiny
+        self.output_type = output_type
 
     @staticmethod
     def _colorize_data(data: str, prio: MessagePrio) -> str:
@@ -102,6 +103,12 @@ class HRFormatter:
         return data
 
     def format(self, msg: dict) -> str:
+        assert (
+            self.output_type != OutputType.HR
+            and self.output_type != OutputType.HR_TINY
+            and self.output_type != OutputType.HR_NANO
+        )
+
         out = ""
         ts = datetime.fromisoformat(msg["timestamp"])
         ts_formatted = ts.strftime("%b %d %H:%M:%S.%f")[:-3]
@@ -111,10 +118,16 @@ class HRFormatter:
         if self.show_colors and "priority" in msg:
             prio = MessagePrio(msg["priority"])
             data = self._colorize_data(data, prio)
-        if self.tiny:
+
+        if self.output_type == OutputType.HR_TINY:
             out = f"{ts_formatted}: {data}"
-        else:
+        elif self.output_type == OutputType.HR_NANO:
+            out = f"{data}"
+        elif self.output_type == OutputType.HR:
             out = f"{ts_formatted} {{{component: <8}}} [{msgtype: <8}]: {data}"
+        else:
+            raise ValueError("BUG: this code should not bo reachable")
+
         if self.show_ids and "id" in msg:
             out += "\n"
             if self.show_colors:
@@ -185,14 +198,13 @@ class Logger:
         else:
             output_type_raw = os.environ.get("PENLOG_OUTPUT")
             if output_type_raw is None:
-                self.output_type = OutputType.HR_TINY
+                self.output_type = OutputType.HR_NANO
             else:
                 self.output_type = OutputType(output_type_raw)
         self.lines = str2bool(os.environ.get("PENLOG_CAPTURE_LINES", ""))
         self.stacktraces = str2bool(os.environ.get("PENLOG_CAPTURE_STACKTRACES", ""))
-        is_tiny = True if self.output_type == OutputType.HR_TINY else False
         self.hr_formatter = HRFormatter(
-            show_colors, False, self.lines, self.stacktraces, False, is_tiny
+            show_colors, False, self.lines, self.stacktraces, False, self.output_type
         )
 
     def _log(self, msg: dict, depth: int) -> None:
@@ -217,10 +229,11 @@ class Logger:
             print(json.dumps(msg), file=self.file, flush=self.flush)
         elif self.output_type == OutputType.JSON_PRETTY:
             print(json.dumps(msg, indent=2), file=self.file, flush=self.flush)
-        elif self.output_type == OutputType.HR:
-            out = self.hr_formatter.format(msg)
-            print(out, file=self.file, flush=self.flush)
-        elif self.output_type == OutputType.HR_TINY:
+        elif (
+            self.output_type != OutputType.HR
+            and self.output_type != OutputType.HR_TINY
+            and self.output_type != OutputType.HR_NANO
+        ):
             out = self.hr_formatter.format(msg)
             print(out, file=self.file, flush=self.flush)
         else:
