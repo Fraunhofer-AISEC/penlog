@@ -121,9 +121,9 @@ class HRFormatter:
 
     def format(self, msg: _LOG_RECORD_TYPE) -> str:
         assert (
-            self.output_type != OutputType.HR
-            and self.output_type != OutputType.HR_TINY
-            and self.output_type != OutputType.HR_NANO
+            self.output_type == OutputType.HR
+            or self.output_type == OutputType.HR_TINY
+            or self.output_type == OutputType.HR_NANO
         )
 
         out = ""
@@ -247,9 +247,9 @@ class Logger:
         elif self.output_type == OutputType.JSON_PRETTY:
             print(json.dumps(msg, indent=2), file=self.file, flush=self.flush)
         elif (
-            self.output_type != OutputType.HR
-            and self.output_type != OutputType.HR_TINY
-            and self.output_type != OutputType.HR_NANO
+            self.output_type == OutputType.HR
+            or self.output_type == OutputType.HR_TINY
+            or self.output_type == OutputType.HR_NANO
         ):
             out = self.hr_formatter.format(msg)
             print(out, file=self.file, flush=self.flush)
