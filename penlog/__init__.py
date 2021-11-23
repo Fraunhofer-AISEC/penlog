@@ -147,7 +147,7 @@ class Logger:
         component: str = "root",
         flush: bool = False,
         file_: TextIO = sys.stderr,
-        loglevel: MessagePrio = MessagePrio.DEBUG,
+        loglevel: Optional[MessagePrio] = None,
         output_type: Optional[OutputType] = None,
         show_colors: bool = False,
         include_uuid: bool = False,
@@ -156,7 +156,29 @@ class Logger:
         self.component = component
         self.flush = flush
         self.file = file_
-        self.loglevel = loglevel
+
+        # Default the loglevel to the function argument
+        # if it is set. Otherwise try to read the environ
+        # variable. If it is set, validate it. If it is not
+        # set, default to DEBUG.
+        if loglevel is not None:
+            self.loglevel = loglevel
+        else:
+            level = os.getenv("PENLOG_LOGLEVEL")
+            if level is None:
+                self.loglevel = MessagePrio.DEBUG
+            else:
+                try:
+                    level_int = int(level, 0)
+                    self.loglevel = MessagePrio(level_int)
+                except ValueError:
+                    for level_enum in MessagePrio:
+                        if level == level_enum.name.lower():
+                            self.loglevel = level_enum
+                            break
+                    else:
+                        raise ValueError("invalid loglevel")
+
         self.include_uuid = include_uuid
         if output_type:
             self.output_type = output_type
