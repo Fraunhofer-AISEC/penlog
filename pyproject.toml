@@ -1,9 +1,15 @@
 [tool.poetry]
 name = "pypenlog"
 version = "0.2.6"
-description = "Library implementing AISECs penlog specification"
+description = "Library implementing AISEC's penlog specification"
 authors = ["Stefan Tatschner <stefan.tatschner@aisec.fraunhofer.de>"]
-license = "Apache"
+license = "Apache-2.0"
+repository = "https://github.com/Fraunhofer-AISEC/pypenlog"
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
 packages = [
     { include = "penlog" }
 ]
