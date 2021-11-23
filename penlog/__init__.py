@@ -9,7 +9,7 @@ import traceback
 import uuid
 from datetime import datetime
 from enum import Enum, IntEnum
-from typing import Any, TextIO, Optional
+from typing import Any, TextIO, TypedDict, Optional
 
 
 class MessageType(str, Enum):
@@ -48,6 +48,23 @@ class Color(Enum):
     CYAN = "\033[36m"
     WHITE = "\033[37m"
     GRAY = "\033[0;38;5;245m"
+
+
+_LOG_RECORD_TYPE = TypedDict(
+    "_LOG_RECORD_TYPE",
+    {
+        "component": str,
+        "data": str,
+        "host": str,
+        "id": Optional[str],
+        "line": Optional[str],
+        "priority": MessagePrio,
+        "stacktrace": Optional[str],
+        "tags": Optional[list[str]],
+        "timestamp": str,
+        "type": str,
+    },
+)
 
 
 def colorize(color: Color, s: str) -> str:
@@ -102,7 +119,7 @@ class HRFormatter:
             data = colorize(Color.GRAY, data)
         return data
 
-    def format(self, msg: dict) -> str:
+    def format(self, msg: _LOG_RECORD_TYPE) -> str:
         assert (
             self.output_type != OutputType.HR
             and self.output_type != OutputType.HR_TINY
@@ -128,22 +145,22 @@ class HRFormatter:
         else:
             raise ValueError("BUG: this code should not bo reachable")
 
-        if self.show_ids and "id" in msg:
+        if self.show_ids and msg["id"] is not None:
             out += "\n"
             if self.show_colors:
                 out += f" => id  : {colorize(Color.YELLOW, msg['id'])}"
             else:
                 out += f" => id  : {msg['id']}"
-        if self.show_lines and "line" in msg:
+        if self.show_lines and msg["line"] is not None:
             out += "\n"
             if self.show_colors:
                 out += f" => line: {colorize(Color.BLUE, msg['line'])}"
             else:
                 out += f" => line: {msg['line']}"
-        if self.show_tags and "tags" in msg:
+        if self.show_tags and msg["tags"] is not None:
             out += "\n"
             out += f" => tags: {' '.join(msg['tags'])}"
-        if self.show_stacktraces and "stacktrace" in msg:
+        if self.show_stacktraces and msg["stacktrace"] is not None:
             out += "\n"
             out += " => stacktrace:\n"
             for line in msg["stacktrace"].splitlines():
@@ -207,7 +224,7 @@ class Logger:
             show_colors, False, self.lines, self.stacktraces, False, self.output_type
         )
 
-    def _log(self, msg: dict, depth: int) -> None:
+    def _log(self, msg: _LOG_RECORD_TYPE, depth: int) -> None:
         if "priority" in msg:
             try:
                 prio = MessagePrio(msg["priority"])
@@ -246,13 +263,18 @@ class Logger:
         prio: MessagePrio = MessagePrio.INFO,
         tags: Optional[list[str]] = None,
     ) -> None:
-        msg = {
-            "type": type_,
-            "priority": prio,
+        msg: _LOG_RECORD_TYPE = {
+            "component": "",
             "data": str(data),
+            "host": "",
+            "id": None,
+            "line": None,
+            "priority": prio,
+            "stacktrace": None,
+            "tags": tags,
+            "timestamp": "",
+            "type": "",
         }
-        if tags:
-            msg["tags"] = tags
         self._log(msg, 4)
 
     def log_msg(
@@ -262,13 +284,18 @@ class Logger:
         prio: MessagePrio = MessagePrio.INFO,
         tags: Optional[list[str]] = None,
     ) -> None:
-        msg = {
-            "type": type_,
-            "priority": prio,
+        msg: _LOG_RECORD_TYPE = {
+            "component": "",
             "data": str(data),
+            "host": "",
+            "id": None,
+            "line": None,
+            "priority": prio,
+            "stacktrace": None,
+            "tags": tags,
+            "timestamp": "",
+            "type": "",
         }
-        if tags:
-            msg["tags"] = tags
         self._log(msg, 3)
 
     def log_trace(self, data: Any, tags: Optional[list[str]] = None) -> None:
@@ -294,5 +321,5 @@ class Logger:
 
 
 class DiscardLogger(Logger):
-    def _log(self, msg: dict, depth: int) -> None:
+    def _log(self, msg: _LOG_RECORD_TYPE, depth: int) -> None:
         pass
