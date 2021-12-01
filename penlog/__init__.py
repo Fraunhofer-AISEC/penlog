@@ -225,13 +225,12 @@ class Logger:
         )
 
     def _log(self, msg: _LOG_RECORD_TYPE, depth: int) -> None:
-        if "priority" in msg:
-            try:
-                prio = MessagePrio(msg["priority"])
-                if prio > self.loglevel:
-                    return
-            except ValueError:
-                pass
+        try:
+            prio = MessagePrio(msg["priority"])
+            if prio > self.loglevel:
+                return
+        except ValueError:
+            pass
         if self.include_uuid:
             msg["id"] = str(uuid.uuid4())
         msg["component"] = self.component
