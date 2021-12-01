@@ -179,13 +179,16 @@ class Logger:
         file_: TextIO = sys.stderr,
         loglevel: Optional[MessagePrio] = None,
         output_type: Optional[OutputType] = None,
-        show_colors: bool = False,
+        show_colors: bool = True,
         include_uuid: bool = False,
     ):
         self.host = socket.gethostname()
         self.component = component
         self.flush = flush
         self.file = file_
+        self.include_uuid = include_uuid
+        self.lines = str2bool(os.environ.get("PENLOG_CAPTURE_LINES", ""))
+        self.stacktraces = str2bool(os.environ.get("PENLOG_CAPTURE_STACKTRACES", ""))
 
         # Default the loglevel to the function argument
         # if it is set. Otherwise try to read the environ
@@ -209,7 +212,6 @@ class Logger:
                     else:
                         raise ValueError("invalid loglevel")
 
-        self.include_uuid = include_uuid
         if output_type:
             self.output_type = output_type
         else:
@@ -218,10 +220,15 @@ class Logger:
                 self.output_type = OutputType.HR_NANO
             else:
                 self.output_type = OutputType(output_type_raw)
-        self.lines = str2bool(os.environ.get("PENLOG_CAPTURE_LINES", ""))
-        self.stacktraces = str2bool(os.environ.get("PENLOG_CAPTURE_STACKTRACES", ""))
+
+        show_colors = True if show_colors and self.file.isatty() else False
         self.hr_formatter = HRFormatter(
-            show_colors, False, self.lines, self.stacktraces, False, self.output_type
+            show_colors=show_colors,
+            show_ids=False,
+            show_lines=self.lines,
+            show_stacktraces=self.stacktraces,
+            show_tags=False,
+            output_type=self.output_type,
         )
 
     def _log(self, msg: _LOG_RECORD_TYPE, depth: int) -> None:
