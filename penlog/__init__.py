@@ -143,7 +143,7 @@ class HRFormatter:
         elif self.output_type == OutputType.HR:
             out = f"{ts_formatted} {{{component: <8}}} [{msgtype: <8}]: {data}"
         else:
-            raise ValueError("BUG: this code should not bo reachable")
+            raise ValueError("BUG: this code should not be reachable")
 
         if self.show_ids and msg["id"] is not None:
             out += "\n"
