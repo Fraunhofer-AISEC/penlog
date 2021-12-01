@@ -279,7 +279,7 @@ class Logger:
             "stacktrace": None,
             "tags": tags,
             "timestamp": "",
-            "type": "",
+            "type": type_,
         }
         self._log(msg, 4)
 
@@ -300,7 +300,7 @@ class Logger:
             "stacktrace": None,
             "tags": tags,
             "timestamp": "",
-            "type": "",
+            "type": type_,
         }
         self._log(msg, 3)
 
