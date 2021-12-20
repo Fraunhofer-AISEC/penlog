@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime/pprof"
@@ -54,6 +55,8 @@ type converter struct {
 	writers     []chan map[string]interface{}
 	mutex       sync.Mutex
 	wg          sync.WaitGroup
+	less        *exec.Cmd
+	lessStdin   io.Writer
 }
 
 func (c *converter) cleanup() {
@@ -65,6 +68,10 @@ func (c *converter) cleanup() {
 	if c.workers > 0 {
 		close(c.broadcastCh)
 		c.wg.Wait()
+	}
+	if c.less != nil {
+		c.less.Process.Kill()
+		c.less.Wait()
 	}
 	c.cleanedUp = true
 	c.mutex.Unlock()
@@ -144,16 +151,32 @@ func (c *converter) initializeOutstreams() {
 	c.wg.Add(c.workers)
 }
 
-func fPrintError(w io.Writer, msg string) {
-	line := createErrorRecord(msg)
-	str, _ := json.Marshal(line)
-	fmt.Fprintln(w, string(str))
+func (c *converter) print(msg string) {
+	if c.less != nil {
+		if _, err := io.Copy(c.lessStdin, strings.NewReader(msg)); err != nil {
+			if errors.Is(err, syscall.EPIPE) {
+				os.Exit(0)
+			}
+			panic(err)
+		}
+	} else {
+		fmt.Print(msg)
+	}
 }
 
 func (c *converter) printError(msg string) {
 	line := createErrorRecord(msg)
 	str, _ := c.formatter.Format(line)
-	fmt.Print(str)
+	if c.less != nil {
+		if _, err := io.Copy(c.lessStdin, strings.NewReader(str)); err != nil {
+			if errors.Is(err, syscall.EPIPE) {
+				os.Exit(0)
+			}
+			panic(err)
+		}
+	} else {
+		fmt.Fprint(os.Stderr, msg)
+	}
 }
 
 func (c *converter) transform(r io.Reader) {
@@ -251,7 +274,7 @@ func (c *converter) transform(r io.Reader) {
 					cursorReset = false
 				}
 			} else {
-				fmt.Println(hrLine)
+				c.print(hrLine + "\n")
 			}
 		} else {
 			if errors.Is(err, errInvalidData) {
@@ -325,6 +348,7 @@ func main() {
 		linesCli      bool
 		stacktraceCli bool
 		hrFormatRaw   string
+		noPager       bool
 		conv          = converter{
 			formatter:   penlog.NewHRFormatter(),
 			workers:     0,
@@ -345,6 +369,7 @@ func main() {
 	pflag.StringVarP(&hrFormatRaw, "hr-format", "F", "hr-full", "specify hr format: hr-full, hr-tiny, hr-nona")
 	pflag.StringArrayVarP(&filterSpecs, "filter", "f", []string{}, "write logs to a file with filters")
 	pflag.BoolVar(&conv.volatileInfo, "volatile-info", false, "Overwrite info messages in the same line")
+	pflag.BoolVar(&noPager, "no-pager", false, "do not page through less")
 	showVersion := pflag.BoolP("version", "V", false, "Show version and exit")
 	cpuprofile := pflag.String("cpuprofile", "", "write cpu profile to `file`")
 	pflag.Parse()
@@ -400,13 +425,29 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
+	if isatty(uintptr(syscall.Stdout)) && !noPager {
+		cmd := exec.Command("less", "-F", "-g", "-i", "-M", "-R", "-S", "-w", "-X", "-z-4")
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		if err := cmd.Start(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		conv.less = cmd
+		conv.lessStdin = stdin
+	}
+
 	conv.formatter.ShowColors = colorsCli
 	if colorsCli {
-		if !isatty(uintptr(syscall.Stdout)) {
+		if !isatty(uintptr(syscall.Stdout)) && !helpers.GetEnvBool("PENLOG_FORCE_COLORS") {
 			conv.formatter.ShowColors = false
-		}
-		if helpers.GetEnvBool("PENLOG_FORCE_COLORS") {
-			conv.formatter.ShowColors = colorsCli
 		}
 	}
 	conv.formatter.ShowLines = linesCli
