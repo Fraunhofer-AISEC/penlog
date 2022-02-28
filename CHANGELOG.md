@@ -2,6 +2,12 @@
 
 The file uses the format specified in [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## 0.3.1
+
+### Fixed
+
+* Use defaults for Optional Types in RecordType to prevent strange errors.
+
 ## 0.3.0
 
 ### Added
