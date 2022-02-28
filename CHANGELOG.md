@@ -2,6 +2,16 @@
 
 The file uses the format specified in [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## 0.3.2
+
+### Added
+
+* Unit tests with pytest.
+
+### Fixed
+
+* The new RecordType class was not json serializable and `PENLOG_OUTPUT=json` was broken. Fix this problem with `dataclasses.asdict()`.
+
 ## 0.3.1
 
 ### Fixed
