@@ -4,9 +4,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pypenlog"
-version = "0.2.8"
+version = "0.3.0"
 description = "Library implementing AISEC's penlog specification"
 authors = ["Stefan Tatschner <stefan.tatschner@aisec.fraunhofer.de>"]
+maintainers = ["Stefan Tatschner <stefan.tatschner@aisec.fraunhofer.de>"]
+readme = "README.md"
 license = "Apache-2.0"
 repository = "https://github.com/Fraunhofer-AISEC/pypenlog"
 classifiers = [
