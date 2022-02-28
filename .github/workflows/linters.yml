@@ -1,10 +1,6 @@
-name: penlog
+name: linters
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 jobs:
   linter:
@@ -22,12 +18,20 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - uses: abatilo/actions-poetry@v2.0.0
       with:
-        poetry-version: '1.1.11'
+        poetry-version: '1.1.13'
+
     - name: prepare
       run: |
         poetry install
 
-    - name: linter
+    - name: flake8
       run: |
-        poetry run flake8 --config setup.cfg penlog
-        poetry run mypy --config setup.cfg penlog
+        poetry run flake8 penlog
+
+    - name: mypy
+      run: |
+        poetry run mypy penlog
+
+    - name: black
+      run: |
+        poetry run black --check --verbose ./penlog
