@@ -191,13 +191,12 @@ class Logger:
         # Default the loglevel to the function argument
         # if it is set. Otherwise try to read the environ
         # variable. If it is set, validate it. If it is not
-        # set, default to DEBUG.
+        # set, default to INFO.
         if loglevel is not None:
             self.loglevel = loglevel
         else:
-            level = os.getenv("PENLOG_LOGLEVEL")
-            if level is None:
-                self.loglevel = MessagePrio.DEBUG
+            if (level := os.getenv("PENLOG_LOGLEVEL")) is None:
+                self.loglevel = MessagePrio.INFO
             else:
                 try:
                     level_int = int(level, 0)
