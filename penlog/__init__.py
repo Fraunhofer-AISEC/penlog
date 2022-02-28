@@ -7,7 +7,7 @@ import socket
 import sys
 import traceback
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from enum import Enum, IntEnum
 from typing import Any, TextIO, Optional
@@ -245,9 +245,9 @@ class Logger:
         if self.stacktraces:
             msg.stacktrace = "".join(traceback.format_stack())
         if self.output_type == OutputType.JSON:
-            print(json.dumps(msg), file=self.file, flush=self.flush)
+            print(json.dumps(asdict(msg)), file=self.file, flush=self.flush)
         elif self.output_type == OutputType.JSON_PRETTY:
-            print(json.dumps(msg, indent=2), file=self.file, flush=self.flush)
+            print(json.dumps(asdict(msg), indent=2), file=self.file, flush=self.flush)
         elif (
             self.output_type == OutputType.HR
             or self.output_type == OutputType.HR_TINY
