@@ -56,11 +56,11 @@ class RecordType:
     component: str
     data: str
     host: str
-    id: Optional[str]
-    line: Optional[str]
     priority: MessagePrio
     timestamp: str
     type: str
+    id: Optional[str] = None
+    line: Optional[str] = None
     stacktrace: Optional[str] = None
     tags: Optional[list[str]] = None
 
