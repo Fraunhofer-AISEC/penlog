@@ -212,11 +212,10 @@ class Logger:
         if output_type:
             self.output_type = output_type
         else:
-            output_type_raw = os.environ.get("PENLOG_OUTPUT")
-            if output_type_raw is None:
+            if (type_raw := os.environ.get("PENLOG_OUTPUT")) is None:
                 self.output_type = OutputType.HR_NANO
             else:
-                self.output_type = OutputType(output_type_raw)
+                self.output_type = OutputType(type_raw)
 
         show_colors = True if show_colors and self.file.isatty() else False
         self.hr_formatter = HRFormatter(
