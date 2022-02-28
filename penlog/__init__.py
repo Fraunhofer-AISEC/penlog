@@ -7,9 +7,10 @@ import socket
 import sys
 import traceback
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, IntEnum
-from typing import Any, TextIO, TypedDict, Optional
+from typing import Any, TextIO, Optional
 
 
 class MessageType(str, Enum):
@@ -50,21 +51,18 @@ class Color(Enum):
     GRAY = "\033[0;38;5;245m"
 
 
-_LOG_RECORD_TYPE = TypedDict(
-    "_LOG_RECORD_TYPE",
-    {
-        "component": str,
-        "data": str,
-        "host": str,
-        "id": Optional[str],
-        "line": Optional[str],
-        "priority": MessagePrio,
-        "stacktrace": Optional[str],
-        "tags": Optional[list[str]],
-        "timestamp": str,
-        "type": str,
-    },
-)
+@dataclass
+class RecordType:
+    component: str
+    data: str
+    host: str
+    id: Optional[str]
+    line: Optional[str]
+    priority: MessagePrio
+    timestamp: str
+    type: str
+    stacktrace: Optional[str] = None
+    tags: Optional[list[str]] = None
 
 
 def colorize(color: Color, s: str) -> str:
@@ -119,7 +117,7 @@ class HRFormatter:
             data = colorize(Color.GRAY, data)
         return data
 
-    def format(self, msg: _LOG_RECORD_TYPE) -> str:
+    def format(self, msg: RecordType) -> str:
         assert (
             self.output_type == OutputType.HR
             or self.output_type == OutputType.HR_TINY
@@ -127,13 +125,13 @@ class HRFormatter:
         )
 
         out = ""
-        ts = datetime.fromisoformat(msg["timestamp"])
+        ts = datetime.fromisoformat(msg.timestamp)
         ts_formatted = ts.strftime("%b %d %H:%M:%S.%f")[:-3]
-        component = msg["component"]
-        msgtype = msg["type"]
-        data = msg["data"]
-        if self.show_colors and "priority" in msg:
-            prio = MessagePrio(msg["priority"])
+        component = msg.component
+        msgtype = msg.type
+        data = msg.data
+        if self.show_colors:
+            prio = MessagePrio(msg.priority)
             data = self._colorize_data(data, prio)
 
         if self.output_type == OutputType.HR_TINY:
@@ -145,25 +143,25 @@ class HRFormatter:
         else:
             raise ValueError("BUG: this code should not be reachable")
 
-        if self.show_ids and msg["id"] is not None:
+        if self.show_ids and msg.id is not None:
             out += "\n"
             if self.show_colors:
-                out += f" => id  : {colorize(Color.YELLOW, msg['id'])}"
+                out += f" => id  : {colorize(Color.YELLOW, msg.id)}"
             else:
-                out += f" => id  : {msg['id']}"
-        if self.show_lines and msg["line"] is not None:
+                out += f" => id  : {msg.id}"
+        if self.show_lines and msg.line is not None:
             out += "\n"
             if self.show_colors:
-                out += f" => line: {colorize(Color.BLUE, msg['line'])}"
+                out += f" => line: {colorize(Color.BLUE, msg.line)}"
             else:
-                out += f" => line: {msg['line']}"
-        if self.show_tags and msg["tags"] is not None:
+                out += f" => line: {msg.line}"
+        if self.show_tags and msg.tags is not None:
             out += "\n"
-            out += f" => tags: {' '.join(msg['tags'])}"
-        if self.show_stacktraces and msg["stacktrace"] is not None:
+            out += f" => tags: {' '.join(msg.tags)}"
+        if self.show_stacktraces and msg.stacktrace is not None:
             out += "\n"
             out += " => stacktrace:\n"
-            for line in msg["stacktrace"].splitlines():
+            for line in msg.stacktrace.splitlines():
                 if self.show_colors:
                     out += colorize(Color.GRAY, f" | {line}\n")
                 else:
@@ -231,23 +229,23 @@ class Logger:
             output_type=self.output_type,
         )
 
-    def _log(self, msg: _LOG_RECORD_TYPE, depth: int) -> None:
+    def _log(self, msg: RecordType, depth: int) -> None:
         try:
-            prio = MessagePrio(msg["priority"])
+            prio = MessagePrio(msg.priority)
             if prio > self.loglevel:
                 return
         except ValueError:
             pass
         if self.include_uuid:
-            msg["id"] = str(uuid.uuid4())
-        msg["component"] = self.component
-        msg["host"] = self.host
+            msg.id = str(uuid.uuid4())
+        msg.component = self.component
+        msg.host = self.host
         now = datetime.now().astimezone()
-        msg["timestamp"] = now.isoformat()
+        msg.timestamp = now.isoformat()
         if self.lines:
-            msg["line"] = _get_line_number(depth)
+            msg.line = _get_line_number(depth)
         if self.stacktraces:
-            msg["stacktrace"] = "".join(traceback.format_stack())
+            msg.stacktrace = "".join(traceback.format_stack())
         if self.output_type == OutputType.JSON:
             print(json.dumps(msg), file=self.file, flush=self.flush)
         elif self.output_type == OutputType.JSON_PRETTY:
@@ -269,18 +267,18 @@ class Logger:
         prio: MessagePrio = MessagePrio.INFO,
         tags: Optional[list[str]] = None,
     ) -> None:
-        msg: _LOG_RECORD_TYPE = {
-            "component": "",
-            "data": str(data),
-            "host": "",
-            "id": None,
-            "line": None,
-            "priority": prio,
-            "stacktrace": None,
-            "tags": tags,
-            "timestamp": "",
-            "type": type_,
-        }
+        msg = RecordType(
+            component="",
+            data=str(data),
+            host="",
+            id=None,
+            line=None,
+            priority=prio,
+            stacktrace=None,
+            tags=tags,
+            timestamp="",
+            type=type_,
+        )
         self._log(msg, 4)
 
     def log_msg(
@@ -290,18 +288,18 @@ class Logger:
         prio: MessagePrio = MessagePrio.INFO,
         tags: Optional[list[str]] = None,
     ) -> None:
-        msg: _LOG_RECORD_TYPE = {
-            "component": "",
-            "data": str(data),
-            "host": "",
-            "id": None,
-            "line": None,
-            "priority": prio,
-            "stacktrace": None,
-            "tags": tags,
-            "timestamp": "",
-            "type": type_,
-        }
+        msg = RecordType(
+            component="",
+            data=str(data),
+            host="",
+            id=None,
+            line=None,
+            priority=prio,
+            stacktrace=None,
+            tags=tags,
+            timestamp="",
+            type=type_,
+        )
         self._log(msg, 3)
 
     def log_trace(self, data: Any, tags: Optional[list[str]] = None) -> None:
@@ -327,5 +325,5 @@ class Logger:
 
 
 class DiscardLogger(Logger):
-    def _log(self, msg: _LOG_RECORD_TYPE, depth: int) -> None:
+    def _log(self, msg: RecordType, depth: int) -> None:
         pass
