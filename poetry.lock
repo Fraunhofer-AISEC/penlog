@@ -305,7 +305,7 @@ test = ["pylint", "pycodestyle", "pyflakes", "pytest", "pytest-cov", "coverage"]
 
 [[package]]
 name = "python-lsp-server"
-version = "1.4.0"
+version = "1.4.1"
 description = "Python Language Server for the Language Server Protocol"
 category = "dev"
 optional = false
@@ -376,7 +376,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "f5baf7d15a6d8536491bceafef18da7ccd688877eaace7c47b173d35571f305c"
+content-hash = "577018bc784be2cfbc98b9895f66951efd01922c8a925e31873eb99910ca2ba5"
 
 [metadata.files]
 atomicwrites = [
@@ -522,8 +522,8 @@ python-lsp-jsonrpc = [
     {file = "python_lsp_jsonrpc-1.0.0-py3-none-any.whl", hash = "sha256:079b143be64b0a378bdb21dff5e28a8c1393fe7e8a654ef068322d754e545fc7"},
 ]
 python-lsp-server = [
-    {file = "python-lsp-server-1.4.0.tar.gz", hash = "sha256:769142c07573f6b66e930cbd7c588b826082550bef6267bb0aec63e7b6260009"},
-    {file = "python_lsp_server-1.4.0-py3-none-any.whl", hash = "sha256:3160c97c6d1edd8456f262fc0e4aad6b322c0cfd1b58d322a41679e57787594d"},
+    {file = "python-lsp-server-1.4.1.tar.gz", hash = "sha256:be7f83298af9f0951a93972cafc9db04fd7cf5c05f20812515275f0ba70e342f"},
+    {file = "python_lsp_server-1.4.1-py3-none-any.whl", hash = "sha256:e6bd0cf9530d8e2ba3b9c0ae10b99a16c33808bc9a7266afecc3900017b35326"},
 ]
 rope = [
     {file = "rope-1.0.0-py3-none-any.whl", hash = "sha256:67749b582d57954f288b0441fae93e8f4c166d7e93fc29c430bd4db28ec904d0"},
