@@ -332,11 +332,11 @@ yapf = ["yapf"]
 
 [[package]]
 name = "rope"
-version = "0.23.0"
+version = "1.0.0"
 description = "a python refactoring library..."
 category = "dev"
 optional = false
-python-versions = "*"
+python-versions = ">=3"
 
 [package.extras]
 dev = ["build", "pytest", "pytest-timeout"]
@@ -376,7 +376,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "656cd5c83c1dedc269f429323b9dcddd03a085a1137dd04cec3f1d19b99e8675"
+content-hash = "dcb53ba8d0febe10f9e52c111ae2f77c799b6b732060feb39242b19847c4f402"
 
 [metadata.files]
 atomicwrites = [
@@ -526,8 +526,8 @@ python-lsp-server = [
     {file = "python_lsp_server-1.4.0-py3-none-any.whl", hash = "sha256:3160c97c6d1edd8456f262fc0e4aad6b322c0cfd1b58d322a41679e57787594d"},
 ]
 rope = [
-    {file = "rope-0.23.0-py3-none-any.whl", hash = "sha256:edf2ed3c9b35a8814752ffd3ea55b293c791e5087e252461de898e953cf9c146"},
-    {file = "rope-0.23.0.tar.gz", hash = "sha256:f87662c565086d660fc855cc07f37820267876634c3e9e51bddb32ff51547268"},
+    {file = "rope-1.0.0-py3-none-any.whl", hash = "sha256:67749b582d57954f288b0441fae93e8f4c166d7e93fc29c430bd4db28ec904d0"},
+    {file = "rope-1.0.0.tar.gz", hash = "sha256:16f652d3002296778d463db329da6a05d914a4dbde30ea6da76362da06c0ebb7"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
