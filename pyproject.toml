@@ -32,7 +32,7 @@ flake8 = "^4.0.1"
 python-lsp-black = "^1.2.1"
 python-lsp-server = "^1.4.1"
 pylsp-mypy = "^0.5.7"
-pylsp-rope = "^0.1.8"
+pylsp-rope = "^0.1.9"
 black = "^22.3.0"
 pytest = "^7.1.2"
 
