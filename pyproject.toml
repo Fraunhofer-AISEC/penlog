@@ -27,7 +27,7 @@ python = "^3.9"
 [tool.poetry.dev-dependencies]
 mccabe = "^0.6.1"
 rope = "^1.0.0"
-mypy = "^0.942"
+mypy = "^0.950"
 flake8 = "^4.0.1"
 python-lsp-black = "^1.2.1"
 python-lsp-server = "^1.4.1"
