@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hr &mdash; penlog  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="penlog" href="penlog.7.html" />
+    <link rel="prev" title="Welcome to penlog’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> penlog
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">hr</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#description">Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#arguments">Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="penlog.7.html">penlog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">penlog</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>hr</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/hr.1.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hr">
+<h1>hr<a class="headerlink" href="#hr" title="Permalink to this headline"></a></h1>
+<section id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>hr [ARGS] [FILE…]
+</pre></div>
+</div>
+</section>
+<section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline"></a></h2>
+<p>hr(1) is used to process data in the penlog(7) format.
+It converts data form the JSON format into the human readable format.
+Data is tried to be always aligned in order to make the logs as readable as possible.
+hr(1) provides filtering and archiving functionality.</p>
+<p>With no <code class="docutils literal notranslate"><span class="pre">FILE</span></code> from stdin is read.
+Multiple files are concatenated, similar to cat(1).
+However, <code class="docutils literal notranslate"><span class="pre">-</span></code> as a <code class="docutils literal notranslate"><span class="pre">FILE</span></code> is not supported.
+If <code class="docutils literal notranslate"><span class="pre">FILE</span></code> has the file extension <code class="docutils literal notranslate"><span class="pre">.gz</span></code> (gzip) or <code class="docutils literal notranslate"><span class="pre">zst</span></code> (zstd) it is automatically decompressed.</p>
+</section>
+<section id="arguments">
+<h2>Arguments<a class="headerlink" href="#arguments" title="Permalink to this headline"></a></h2>
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-c">
+<span id="cmdoption-complen"></span><span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"> <span class="pre">int</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--complen</span></span><span class="sig-prename descclassname"> <span class="pre">int</span></span><a class="headerlink" href="#cmdoption-c" title="Permalink to this definition"></a></dt>
+<dd><p>The lenghth of the component field (default 8).</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-f">
+<span id="cmdoption-filter"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--filter</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><a class="headerlink" href="#cmdoption-f" title="Permalink to this definition"></a></dt>
+<dd><p>A filter expression using one of the following syntaxes:
+<code class="docutils literal notranslate"><span class="pre">file</span></code>, <code class="docutils literal notranslate"><span class="pre">type,…:file</span></code>, <code class="docutils literal notranslate"><span class="pre">component,…:type,…:file</span></code>.
+For <code class="docutils literal notranslate"><span class="pre">file</span></code> the same compression algorithms as for reading are supported.
+The first one saves the JSON data into <code class="docutils literal notranslate"><span class="pre">file</span></code>.
+The second one only writes messages of <code class="docutils literal notranslate"><span class="pre">type</span></code> into <code class="docutils literal notranslate"><span class="pre">file</span></code>.
+The third one only writes messages from <code class="docutils literal notranslate"><span class="pre">comonent</span></code> and <code class="docutils literal notranslate"><span class="pre">type</span></code> into <code class="docutils literal notranslate"><span class="pre">file</span></code>.
+Filters to stdout can be applied using the filename <code class="docutils literal notranslate"><span class="pre">-</span></code>.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-i">
+<span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><a class="headerlink" href="#cmdoption-i" title="Permalink to this definition"></a></dt>
+<dd><p>Only show messages with this unique id.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-p">
+<span id="cmdoption-priority"></span><span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--priority</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><a class="headerlink" href="#cmdoption-p" title="Permalink to this definition"></a></dt>
+<dd><p>Only display messages with the priority &lt; <code class="docutils literal notranslate"><span class="pre">string</span></code>.
+An integer or a string can be specified.
+The following strings are recognized: <code class="docutils literal notranslate"><span class="pre">trace</span></code>, <code class="docutils literal notranslate"><span class="pre">debug</span></code>, <code class="docutils literal notranslate"><span class="pre">info</span></code>, <code class="docutils literal notranslate"><span class="pre">notice</span></code>, <code class="docutils literal notranslate"><span class="pre">warning</span></code>, <code class="docutils literal notranslate"><span class="pre">error</span></code>, <code class="docutils literal notranslate"><span class="pre">critical</span></code>, <code class="docutils literal notranslate"><span class="pre">alert</span></code>, <code class="docutils literal notranslate"><span class="pre">emergency</span></code>.
+This option only applies to the human readable output.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-show-colors">
+<span class="sig-name descname"><span class="pre">--show-colors</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-show-colors" title="Permalink to this definition"></a></dt>
+<dd><p>Enable or disable the colorization of output.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-show-ids">
+<span class="sig-name descname"><span class="pre">--show-ids</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-show-ids" title="Permalink to this definition"></a></dt>
+<dd><p>Enable or disable the output of optional unique message ids.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-show-lines">
+<span class="sig-name descname"><span class="pre">--show-lines</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-show-lines" title="Permalink to this definition"></a></dt>
+<dd><p>Enable or disable the output of optional linenumbers.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-show-stacktraces">
+<span class="sig-name descname"><span class="pre">--show-stacktraces</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-show-stacktraces" title="Permalink to this definition"></a></dt>
+<dd><p>Enable or disable the output of optional stacktraces.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-s">
+<span id="cmdoption-timespec"></span><span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--timespec</span></span><span class="sig-prename descclassname"> <span class="pre">string</span></span><a class="headerlink" href="#cmdoption-s" title="Permalink to this definition"></a></dt>
+<dd><p>The golang timspec for the timestamp, default: <code class="docutils literal notranslate"><span class="pre">&quot;Jan</span> <span class="pre">_2</span> <span class="pre">15:04:05.000&quot;</span></code>.</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-tiny">
+<span class="sig-name descname"><span class="pre">--tiny</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiny" title="Permalink to this definition"></a></dt>
+<dd><p>Enable <code class="docutils literal notranslate"><span class="pre">hr-tiny</span></code> format (<code class="docutils literal notranslate"><span class="pre">component</span></code> and <code class="docutils literal notranslate"><span class="pre">type</span></code> are omitted).</p>
+</dd></dl>
+
+<dl class="std cmdoption">
+<dt class="sig sig-object std" id="cmdoption-t">
+<span id="cmdoption-typelen"></span><span class="sig-name descname"><span class="pre">-t</span></span><span class="sig-prename descclassname"> <span class="pre">int</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--typelen</span></span><span class="sig-prename descclassname"> <span class="pre">int</span></span><a class="headerlink" href="#cmdoption-t" title="Permalink to this definition"></a></dt>
+<dd><p>The lenghth of the type field (default 8).</p>
+</dd></dl>
+
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline"></a></h2>
+<p>Read from stdin and only display debug messages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ fancy-command | hr -f debug:-
+</pre></div>
+</div>
+<p>Read from compressed file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ hr log.json.zst
+</pre></div>
+</div>
+<p>Archive testrun into multiple files; only show info on stdout:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ fancy-command | hr -f info:- -f error:errors.json.zst -f all.json.zst
+</pre></div>
+</div>
+</section>
+<section id="environment-variables">
+<h2>Environment Variables<a class="headerlink" href="#environment-variables" title="Permalink to this headline"></a></h2>
+<p>hr(1) follows the recommendations described in penlog(7) for environment variables.
+hr(1) understands these additional environment variables:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">PENLOG_FORCE_COLORS</span></code> (bool)</dt><dd><p>It is best practice to disable color escape codes when the relevant output streams are redirected to a file or a pipe.
+Setting thes evironmental variable enforces color escape codes.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PENLOG_SHOW_LINES</span></code> (bool)</dt><dd><p>The display of line numbers can be enabled or disabled with this variable.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PENLOG_SHOW_STACKTRACES</span></code> (bool)</dt><dd><p>The display of stacktraces can be enabled or disabled with this variable.</p>
+</dd>
+</dl>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline"></a></h2>
+<p><em class="manpage">penlog(7)</em></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to penlog’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="penlog.7.html" class="btn btn-neutral float-right" title="penlog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020 -- 2022, AISEC Pentest Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
