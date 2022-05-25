@@ -7,12 +7,6 @@ all: hr
 hr:
 	$(GO) build $(GOFLAGS) -ldflags="-X main.version=$(version)" -o $@ ./bin/$@/...
 
-man:
-	$(MAKE) -C man man
-
-html:
-	$(MAKE) -C man html
-
 .PHONY: update
 update:
 	$(GO) get -u ./bin/...
@@ -20,7 +14,7 @@ update:
 
 .PHONY: clitest
 clitest:
-	$(MAKE) -C tests/cli test
+	$(MAKE) -C test/cli test
 
 .PHONY: clean
 clean:
