@@ -22,5 +22,3 @@ jobs:
         export PATH=$PATH:$PWD
         export GOFLAGS="-race"
         make hr clitest
-    - name: man
-      run: make man
