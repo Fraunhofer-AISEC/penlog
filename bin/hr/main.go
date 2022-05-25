@@ -18,7 +18,7 @@ import (
 	"syscall"
 	"time"
 
-	"codeberg.org/rumpelsepp/helpers"
+	"github.com/rumpelsepp/helpers"
 	penlog "github.com/Fraunhofer-AISEC/penlogger"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/compress/zstd"
