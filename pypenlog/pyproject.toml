@@ -1,0 +1,46 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "pypenlog"
+version = "0.3.2"
+description = "Library implementing AISEC's penlog specification"
+authors = ["Stefan Tatschner <stefan.tatschner@aisec.fraunhofer.de>"]
+maintainers = ["Stefan Tatschner <stefan.tatschner@aisec.fraunhofer.de>"]
+readme = "README.md"
+license = "Apache-2.0"
+repository = "https://github.com/Fraunhofer-AISEC/pypenlog"
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
+packages = [
+    { include = "penlog" }
+]
+include=["penlog/py.typed"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+mccabe = "^0.6.1"
+rope = "^1.0.0"
+mypy = "^0.950"
+flake8 = "^4.0.1"
+python-lsp-black = "^1.2.1"
+python-lsp-server = "^1.4.1"
+pylsp-mypy = "^0.5.8"
+pylsp-rope = "^0.1.9"
+black = "^22.3.0"
+pytest = "^7.1.2"
+
+[tool.mypy]
+strict = true
+
+[tool.black]
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
